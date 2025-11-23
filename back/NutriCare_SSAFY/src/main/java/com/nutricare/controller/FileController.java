@@ -1,4 +1,4 @@
-package com.nutricare.model.controller;
+package com.nutricare.controller;
 
 import java.io.File;
 import java.io.IOException;

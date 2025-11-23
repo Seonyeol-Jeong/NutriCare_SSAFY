@@ -7,13 +7,13 @@
 	<!-- 게시글 전체 조회 -->
 	<select id="selectAll" resultType="Board">
 		SELECT * FROM board
-		WHERE 
 	</select>
 
 	<!-- id로 게시글 상세 조회 -->
 	<select id="selectById" resultType="Board">
 		SELECT * FROM board
-		WHERE board_id = #{boardId}
+		WHERE board_id =
+		#{id}
 	</select>
 
 	<!-- 게시글 등록 -->
@@ -46,9 +46,4 @@
 		view_count = view_count + 1
 		WHERE board_id = #{id}
 	</update>
-	
-	<delete id="delete" parameterType="long">
-		DELETE * FROM board
-		WHERE board_id = #{boardId}
-	</delete>
 </mapper>

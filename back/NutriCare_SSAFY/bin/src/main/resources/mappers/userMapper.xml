@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nutricare.model.dao.UserDao">
+
+    <!-- 공통 컬럼 매핑 -->
+    <resultMap id="userResultMap" type="com.nutricare.model.dto.User">
+        <id property="userId" column="user_id"/>
+        <result property="email" column="email"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="name" column="name"/>
+        <result property="birthYear" column="birth_year"/>
+        <result property="gender" column="gender"/>
+        <result property="role" column="role"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="isDeleted" column="is_deleted"/>
+    </resultMap>
+
+    <!-- 공통 SELECT 칼럼 -->
+    <sql id="userColumns">
+        user_id, email, password_hash, name,
+        birth_year, gender, role,
+        created_at, updated_at, is_deleted
+    </sql>
+
+    <!-- 1) 유저 등록 (POST /user) -->
+    <insert id="insertUser" parameterType="com.nutricare.model.dto.User">
+        INSERT INTO user
+            (email, password_hash, name, birth_year, gender, role)
+        VALUES
+            (#{email}, #{passwordHash}, #{name}, #{birthYear}, #{gender}, #{role});
+    </insert>
+
+    <!-- 2) 유저 전체 조회 (GET /admin/all) -->
+    <select id="findAllUsers" resultMap="userResultMap">
+        SELECT <include refid="userColumns" />
+        FROM user
+        WHERE is_deleted = 0;
+    </select>
+
+    <!-- 3) 유저 상세 조회 (GET /user/me) -->
+    <select id="findUserById" parameterType="long" resultMap="userResultMap">
+        SELECT <include refid="userColumns" />
+        FROM user
+        WHERE user_id = #{userId}
+          AND is_deleted = 0;
+    </select>
+
+    <!-- 4) 유저 정보 수정 (PATCH /user/me) -->
+    <update id="updateUser" parameterType="com.nutricare.model.dto.User">
+        UPDATE user
+        SET 
+            email = #{email},
+            password_hash = #{passwordHash},
+            name = #{name},
+            birth_year = #{birthYear},
+            gender = #{gender},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND is_deleted = 0;
+    </update>
+
+    <!-- 5) 유저 정보 삭제 (DELETE /user/me) -->
+    <update id="deleteUser" parameterType="long">
+        UPDATE user
+        SET 
+            is_deleted = 1,
+            updated_at = NOW()
+        WHERE user_id = #{userId};
+    </update>
+
+    <!-- 6) 로그인(email로 조회) -->
+    <select id="findByEmail" parameterType="string" resultMap="userResultMap">
+        SELECT <include refid="userColumns" />
+        FROM user
+        WHERE email = #{email}
+          AND is_deleted = 0;
+    </select>
+
+</mapper>

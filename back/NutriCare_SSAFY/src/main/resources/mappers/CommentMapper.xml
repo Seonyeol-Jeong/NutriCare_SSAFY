@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nutricare.model.dao.CommentDao">
+
+	<!-- 댓글 전체 조회 -->
+	<select id="selectAll" resultType="Comment">
+		SELECT * FROM comment c, board b
+		WHERE c.boardId = b.boardId
+	</select>
+
+	<!-- 댓글 등록 -->
+
+	<!-- 댓글 내용 수정 -->
+	
+	<!-- 댓글 삭제 -->
+
+</mapper>

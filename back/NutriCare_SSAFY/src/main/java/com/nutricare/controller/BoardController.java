@@ -49,7 +49,7 @@ public class BoardController {
 	// 2. 게시글 상세 조회
 	@Operation(summary = "게시글 상세 조회", description = "ID에 해당하는 게시글 하나를 조회합니다.")
 	@GetMapping("/board/{boardId}")
-	public ResponseEntity<?> getBoard(@PathVariable long id) {
+	public ResponseEntity<?> getBoard(@PathVariable("boardId") long id) {
 		try {
 			// 조회수 증가를 먼저 시키거나, 서비스 내부에서 처리할 수 있습니다.
 			boardService.updateViewCnt(id);
@@ -86,7 +86,7 @@ public class BoardController {
 	// 4. 게시글 수정
 	@Operation(summary = "게시글 수정", description = "게시글 내용을 수정합니다.")
 	@PutMapping("/board/{boardId}")
-	public ResponseEntity<?> update(@PathVariable("id") long id, @RequestBody Board board) {
+	public ResponseEntity<?> update(@PathVariable("boardId") long id, @RequestBody Board board) {
 		try {
 			int result = boardService.update(board);
 			if (result > 0) {
@@ -102,7 +102,7 @@ public class BoardController {
 	// 5. 게시글 삭제
 	@Operation(summary = "게시글 삭제", description = "ID에 해당하는 게시글을 삭제합니다.")
 	@DeleteMapping("/board/{baordId}")
-	public ResponseEntity<?> delete(@PathVariable long id) {
+	public ResponseEntity<?> delete(@PathVariable("boardId") long id) {
 		try {
 			int result = boardService.delete(id);
 			if (result > 0) {

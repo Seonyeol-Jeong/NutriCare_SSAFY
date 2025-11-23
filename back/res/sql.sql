@@ -172,3 +172,22 @@ CREATE TABLE `comment` (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+------------------------------------------------------------
+-- 9) board_image: 게시판 댓글
+------------------------------------------------------------
+
+CREATE TABLE board_image (
+  image_id   BIGINT       NOT NULL AUTO_INCREMENT,
+  board_id   BIGINT       NOT NULL,
+  image_url  VARCHAR(255) NOT NULL,
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (image_id),
+  KEY idx_board_image_board (board_id),
+  CONSTRAINT fk_board_image_board
+    FOREIGN KEY (board_id)
+    REFERENCES board(board_id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

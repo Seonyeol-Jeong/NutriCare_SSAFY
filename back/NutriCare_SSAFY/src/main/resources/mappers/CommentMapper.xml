@@ -29,7 +29,7 @@
     </resultMap>
 
     <!-- 특정 게시글의 댓글 목록 조회 -->
-    <select id="selectAll" parameterType="int" resultMap="commentResultMap">
+    <select id="selectAll" parameterType="long" resultMap="commentResultMap">
         SELECT
         <include refid="commentColumns"/>
         FROM comment c
@@ -56,7 +56,7 @@
     </update>
     
     <!-- 댓글 soft 삭제 -->
-    <update id="delete" parameterType="int">
+    <update id="delete" parameterType="long">
         UPDATE comment
         SET is_deleted = TRUE,
             updated_at = NOW()

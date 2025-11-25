@@ -1,4 +1,4 @@
--- 25.11.21. 3:30 수정
+-- 25.11.23. 4:40 수정
 -- 데이터베이스 생성 및 선택
 DROP DATABASE IF EXISTS nutricare_db;
 CREATE DATABASE nutricare_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -14,6 +14,7 @@ CREATE TABLE `user` (
   `name`          VARCHAR(50)  NOT NULL,
   `birth_year`    YEAR         NULL,              -- 출생연도 (예: 1998)
   `gender`        ENUM('MALE','FEMALE','OTHER') NULL,
+   `role`         ENUM('ADMIN','USER') NOT NULL DEFAULT 'USER',
   `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `is_deleted`    TINYINT(1)   NOT NULL DEFAULT 0,
@@ -173,18 +174,20 @@ CREATE TABLE `comment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ------------------------------------------------------------
--- 9) BOARD_IMAGE: 게시글 이미지
+-- 9) board_image: 게시판 댓글
 ------------------------------------------------------------
-CREATE TABLE `board_image` (
-  `image_id`   BIGINT       NOT NULL AUTO_INCREMENT,
-  `board_id`   BIGINT       NOT NULL,
-  `image_url`  VARCHAR(255) NOT NULL,   -- 이미지 경로(URL 또는 S3 Key)
-  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`image_id`),
-  KEY `idx_board_image_board` (`board_id`),
-  CONSTRAINT `fk_board_image_board`
-    FOREIGN KEY (`board_id`)
-    REFERENCES `board`(`board_id`)
+
+CREATE TABLE board_image (
+  image_id   BIGINT       NOT NULL AUTO_INCREMENT,
+  board_id   BIGINT       NOT NULL,
+  image_url  VARCHAR(255) NOT NULL,
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (image_id),
+  KEY idx_board_image_board (board_id),
+  CONSTRAINT fk_board_image_board
+    FOREIGN KEY (board_id)
+    REFERENCES board(board_id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

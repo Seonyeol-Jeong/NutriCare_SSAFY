@@ -1,8 +1,10 @@
 package com.nutricare.util;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -13,12 +15,20 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
 
-    private final String SECRET_KEY = "my-super-secret-key-for-jwt-authentication-256bit";
+    private final Key key;
 
     private final long EXPIRATION = 1000 * 60 * 60; // 1시간
 
-    // (0.11.5) Key 객체 생성
-    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    /**
+     * JwtUtil은 오직 환경변수 `JWT_SECRET`만 사용합니다.
+     * (개발/운영 환경에서는 이 환경변수를 설정해 주세요)
+     */
+    public JwtUtil(@Value("${JWT_SECRET:}") String secret) {
+        if (secret == null || secret.isBlank() || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalArgumentException("Environment variable JWT_SECRET must be provided and at least 32 bytes long");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     // 1) 토큰 생성
     public String generateToken(Long userId, String role) {

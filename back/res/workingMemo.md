@@ -51,3 +51,8 @@
 - [2025-11-26 16:19] board_image vs photo 차이 정리: board_image는 게시글과 1:N로 얹히는 부속 이미지라 DTO/매퍼만 있으면 충분(게시글 CRUD 안에 포함). photo는 사용자 업로드 이력/ML 분석 등 독립 도메인이라 업로드·저장·조회 흐름이 필요해 DAO/Service/Mapper/Controller까지 분리하는 구조가 적합.
 - [2025-11-26 16:29] photoMapper 리뷰: 1) `selectListByUserId`의 `parameterType="userId"`는 잘못된 타입 지정으로 `long`(또는 `java.lang.Long`)으로 수정 필요. 2) insert 시 `useGeneratedKeys="true" keyProperty="photoId"`로 자동증가 키 주입 권장. 3) `SELECT *` 대신 공통 컬럼(`photoColumns`) 사용 권장. 나머지 컬럼/맵핑 구조는 테이블 정의와 일치 확인.
 - [2025-11-26 16:33] photoMapper 재확인: parameterType 수정, useGeneratedKeys 추가, `photoColumns` include 적용 확인. 추가 권장: `selectOne`도 `SELECT <include refid="photoColumns"/> FROM photo WHERE photo_id = #{photoId}`로 통일하면 컬럼 명시 일관성 확보.
+- [2025-11-26 16:59] 요청: 앞으로 진행 메모는 `res/workingMemo.md`에 기록.
+- [2025-11-26 17:02] PhotoController에 GET 미구현 이유 공유: 초기 요구가 업로드/삭제 중심이라 POST/DELETE만 추가. 내부/모델 사용을 위해서는 selectOne/listByUserId GET 엔드포인트를 추가할 수 있음.
+- [2025-11-26 17:06] PhotoController에 POST/DELETE 구현: `/photo-api/photo` POST로 Photo insert, `/photo-api/photo/{photoId}` DELETE로 삭제. 결과코드: 성공 시 201/200, 실패 시 400/500 반환.
+- [2025-11-26 17:08] PhotoController에 GET 추가: `/photo-api/photo/user/{userId}`로 사용자별 사진 메타데이터 목록 조회 (비어 있으면 204, 성공 200). @Operation summary/description 포함.
+- [2025-11-26 17:09] PhotoController 모든 메서드에 @Operation 추가: 단건 조회/사용자별 목록/등록/삭제 요약·설명 명시.

@@ -1,0 +1,3 @@
+# Auto-register EnvironmentPostProcessor to load .env
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.nutricare.config.DotenvEnvironmentPostProcessor

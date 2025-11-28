@@ -30,9 +30,13 @@ public class WebConfig implements WebMvcConfigurer {
 		// 1) 로그인 여부 확인(JWT로)
 		registry.addInterceptor(jwtInterceptor)
 				.addPathPatterns("/user/me", "/user/me/**", "/user/logout")
-				.addPathPatterns("/admin/**").excludePathPatterns("/user/login", "/user", "/user/")
+				.addPathPatterns("/admin/**")
+				.addPathPatterns("/board-api")
+				.addPathPatterns("/photo-api")
+				.addPathPatterns("/file-api")
+				.excludePathPatterns("/user/login", "/user", "/user/")
 				.excludePathPatterns("/swagger-ui/**", "/v3/api-docs/**")
-				.excludePathPatterns("/css/**", "/js/**", "/img/**");
+				.excludePathPatterns("/css/**", "/js/**", "/img/**", "/favicon.ico");
 		
 		// 2) 관리자 권한 확인
         registry.addInterceptor(adminInterceptor)

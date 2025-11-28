@@ -56,3 +56,6 @@
 - [2025-11-26 17:06] PhotoController에 POST/DELETE 구현: `/photo-api/photo` POST로 Photo insert, `/photo-api/photo/{photoId}` DELETE로 삭제. 결과코드: 성공 시 201/200, 실패 시 400/500 반환.
 - [2025-11-26 17:08] PhotoController에 GET 추가: `/photo-api/photo/user/{userId}`로 사용자별 사진 메타데이터 목록 조회 (비어 있으면 204, 성공 200). @Operation summary/description 포함.
 - [2025-11-26 17:09] PhotoController 모든 메서드에 @Operation 추가: 단건 조회/사용자별 목록/등록/삭제 요약·설명 명시.
+- [2025-11-26 17:25] "다음에 하면 좋을 작업" 섹션에 analysis_result는 외부 FastAPI에서 분석·저장을 맡고, 백엔드는 결과 수신/연동 준비를 추가로 수행하도록 메모.
+- [2025-11-26 17:35] 분석 흐름: FastAPI는 분석 결과 JSON만 전달하고, Spring이 이를 받아 analysis_result DAO로 DB에 INSERT하는 구조로 변경.
+- [2025-11-28 12:59] 업로드 흐름 정리: 게시글 이미지는 기존처럼 파일 저장/URL 반환만 사용, 사용자 얼굴 이미지는 `/file-api/upload-with-meta`로 파일 저장과 Photo 메타데이터(DB) 기록을 함께 처리하는 이원화 방식 사용(업로드+메타 저장 동시 처리 확인).

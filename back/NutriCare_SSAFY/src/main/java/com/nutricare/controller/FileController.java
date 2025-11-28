@@ -1,9 +1,13 @@
 package com.nutricare.controller;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,50 +16,136 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.nutricare.config.GcsProperties;
+import com.nutricare.model.dto.Board;
+import com.nutricare.model.dto.BoardImage;
+import com.nutricare.model.dto.Photo;
+import com.nutricare.model.service.BoardService;
+import com.nutricare.model.service.PhotoService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/board-api")
-@Tag(name = "File Upload API", description = "파일 업로드 기능")
+@RequestMapping("/file-api")
+@Tag(name = "File Upload API", description = "Google Cloud Storage 업로드 API")
 public class FileController {
 
-    // 파일을 저장할 로컬 경로 (C드라이브에 폴더를 미리 만들어두세요!)
-    // 윈도우 예시: "C:/nutricare_images/"
-    // 맥/리눅스 예시: "/Users/name/nutricare_images/"
-    private final String uploadDir = "C:/nutricare_images/";
+    private final PhotoService photoService;
+    private final BoardService boardService;
+    private final Storage storage;
+    private final GcsProperties gcsProps;
 
-    @Operation(summary = "이미지 파일 업로드", description = "이미지 파일을 업로드하고 접근 가능한 URL을 반환합니다.")
-    @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    public FileController(PhotoService photoService,
+                          BoardService boardService,
+                          Storage storage,
+                          GcsProperties gcsProps) {
+        this.photoService = photoService;
+        this.boardService = boardService;
+        this.storage = storage;
+        this.gcsProps = gcsProps;
+    }
+
+    @Operation(summary = "게시글 이미지 업로드(GCS)", description = "GCS에 업로드 후 board_image에 저장")
+    @PostMapping("/upload-board-image")
+    public ResponseEntity<?> uploadBoardImage(@RequestParam("boardId") Long boardId,
+                                              @RequestParam("file") List<MultipartFile> files) {
         try {
+            if (boardId == null || files == null || files.isEmpty()) {
+                return ResponseEntity.badRequest().body("boardId and files are required");
+            }
+            List<BoardImage> images = new ArrayList<>();
+            List<String> urls = new ArrayList<>();
+
+            for (MultipartFile f : files) {
+                if (f.isEmpty()) continue;
+                String objectName = buildObjectName(gcsProps.getPrefixBoard(), String.valueOf(boardId), f.getOriginalFilename());
+                String fileUrl = uploadToGcs(objectName, f);
+                images.add(new BoardImage(boardId, fileUrl));
+                urls.add(fileUrl);
+            }
+
+            if (!images.isEmpty()) {
+                Board board = new Board();
+                board.setBoardId(boardId);
+                board.setImages(images);
+                boardService.insertBoardImages(board);
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of("boardId", boardId, "imageUrls", urls));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File Upload Failed");
+        }
+    }
+
+    @Operation(summary = "Photo 업로드(GCS) 및 메타 저장", description = "JWT에서 userId를 읽어 GCS 업로드 후 photo 테이블에 저장")
+    @PostMapping("/upload-with-meta")
+    public ResponseEntity<?> uploadAndSavePhoto(@RequestParam("file") MultipartFile file,
+                                                HttpServletRequest request) {
+        try {
+            Long userId = (Long) request.getAttribute("userId");
+            if (userId == null) {
+                return new ResponseEntity<>("Invalid token: userId not found", HttpStatus.UNAUTHORIZED);
+            }
             if (file.isEmpty()) {
-                return new ResponseEntity<>("File is empty", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("file is required", HttpStatus.BAD_REQUEST);
             }
 
-            // 1. 폴더가 없으면 생성
-            File directory = new File(uploadDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
+            String objectName = buildObjectName(gcsProps.getPrefixPhoto(), String.valueOf(userId), file.getOriginalFilename());
+            String fileUrl = uploadToGcs(objectName, file);
 
-            // 2. 파일명 중복 방지를 위해 UUID 사용 (ex: uuid_originalName.jpg)
-            String originalFilename = file.getOriginalFilename();
-            String savedFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-            String filePath = uploadDir + savedFilename;
+            Photo photo = new Photo(userId, fileUrl);
+            photoService.insert(photo);
 
-            // 3. 파일 저장
-            file.transferTo(new File(filePath));
+            Map<String, Object> response = new HashMap<>();
+            response.put("fileUrl", fileUrl);
+            response.put("userId", userId);
+            response.put("photoId", photo.getPhotoId());
 
-            // 4. 접근 가능한 URL 반환 (예: /images/uuid_image.jpg)
-            // 나중에 WebMvcConfig에서 이 URL을 실제 폴더랑 연결해줄 겁니다.
-            String fileUrl = "/images/" + savedFilename;
-            
-            return new ResponseEntity<>(fileUrl, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
 
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity<>("File Upload Failed", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private String uploadToGcs(String objectName, MultipartFile multipartFile) throws IOException {
+        String bucket = gcsProps.getBucketName();
+        if (bucket == null || bucket.isBlank()) {
+            throw new IllegalStateException("gcs.bucket-name is not set");
+        }
+
+        String contentType = multipartFile.getContentType() != null
+                ? multipartFile.getContentType()
+                : "application/octet-stream";
+
+        BlobId blobId = BlobId.of(bucket, objectName);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType(contentType)
+                .build();
+
+        storage.create(blobInfo, multipartFile.getBytes());
+
+        String baseUrl = (gcsProps.getBaseUrl() != null && !gcsProps.getBaseUrl().isBlank())
+                ? gcsProps.getBaseUrl()
+                : "https://storage.googleapis.com";
+
+        return baseUrl + "/" + bucket + "/" + objectName;
+    }
+
+    private String buildObjectName(String prefix, String ownerId, String originalFilename) {
+        String cleanPrefix = (prefix != null) ? prefix.trim() : "";
+        if (!cleanPrefix.isEmpty() && !cleanPrefix.endsWith("/")) {
+            cleanPrefix = cleanPrefix + "/";
+        }
+        String ownerSegment = (ownerId != null && !ownerId.isBlank()) ? ownerId + "/" : "";
+        String filename = UUID.randomUUID() + "_" + originalFilename;
+        return cleanPrefix + ownerSegment + filename;
     }
 }

@@ -1,4 +1,4 @@
--- 25.11.23. 4:40 수정
+-- 25.11.28. 11:50 수정
 -- 데이터베이스 생성 및 선택
 DROP DATABASE IF EXISTS nutricare_db;
 CREATE DATABASE nutricare_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -81,19 +81,16 @@ CREATE TABLE `analysis_result` (
 ------------------------------------------------------------
 CREATE TABLE `diet_recommendation` (
   `rec_id`                  BIGINT       NOT NULL AUTO_INCREMENT,
-  `user_id`                 BIGINT       NOT NULL,
+  `health_id`                 BIGINT       NOT NULL,
   `analysis_id`             BIGINT       NULL,       -- analysis_result를 참조
-  `target_calories`         INT          NULL,
-  `days`                    INT          NULL,
-  `start_date`              DATE         NULL,
   `created_at`              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `memo`                    VARCHAR(255) NULL,
   PRIMARY KEY (`rec_id`),
-  KEY `idx_rec_user` (`user_id`),
+  KEY `idx_rec_health` (`health_id`),
   KEY `idx_rec_analysis` (`analysis_id`),
   CONSTRAINT `fk_rec_user`
-    FOREIGN KEY (`user_id`)
-    REFERENCES `user`(`user_id`)
+    FOREIGN KEY (`health_id`)
+    REFERENCES `health_profile`(`health_id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `fk_rec_analysis_result`
@@ -106,15 +103,15 @@ CREATE TABLE `diet_recommendation` (
 ------------------------------------------------------------
 -- 6) DIET_MEAL: 식단 추천 상세(일자/끼니별)
 ------------------------------------------------------------
-CREATE TABLE `diet_meal` (
-  `meal_id`    BIGINT       NOT NULL AUTO_INCREMENT,
-  `rec_id`     BIGINT       NOT NULL,
-  `day_index`  INT          NOT NULL,   -- N일차
-  `meal_type`  ENUM('BREAKFAST','LUNCH','DINNER','SNACK') NOT NULL,
-  `menu_name`  VARCHAR(255) NOT NULL,
-  `description` TEXT        NULL,
-  `calories`   INT          NULL,
-  `notes`      VARCHAR(255) NULL,
+CREATE TABLE `diet_result` (
+  `meal_id`        BIGINT       NOT NULL AUTO_INCREMENT,
+  `rec_id`         BIGINT       NOT NULL,                 -- FK: diet_recommendation.rec_id
+  `menu_name`      VARCHAR(255) NOT NULL,                 -- 메뉴 이름
+  `description`    TEXT         NULL,                     -- 설명
+  `calories`       INT          NOT NULL DEFAULT 0,       -- 칼로리 (기본값 0)
+  `notes`          VARCHAR(255) NULL,                     -- 기타 메모
+  `recipe_url`     VARCHAR(255) NULL,                     -- 조리법 유튜브 URL
+  `skincare_url`   VARCHAR(255) NULL,                     -- 피부 관리법 URL
   PRIMARY KEY (`meal_id`),
   KEY `idx_meal_rec` (`rec_id`),
   CONSTRAINT `fk_meal_rec`
@@ -123,6 +120,7 @@ CREATE TABLE `diet_meal` (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 ------------------------------------------------------------
 -- 7) BOARD: 게시판 글

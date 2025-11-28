@@ -17,8 +17,15 @@ public class BoardImage {
         this.imageUrl = imageUrl;
         this.createdAt = createdAt;
     }
+    
+    
 
-    public Long getImageId() {
+    public BoardImage(Long boardId, String imageUrl) {
+		this.boardId = boardId;
+		this.imageUrl = imageUrl;
+	}
+
+	public Long getImageId() {
         return imageId;
     }
 

@@ -7,6 +7,7 @@ MLflow에 저장된 ResNet18을 불러와 추론만 수행하는 모듈.
 """
 
 import argparse
+import os
 import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -16,10 +17,19 @@ import numpy as np
 import requests
 import torch
 from PIL import Image
+from dotenv import load_dotenv
 from torchvision import transforms
+from google.auth.transport.requests import AuthorizedSession
+from google.oauth2 import service_account
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
+
+_ROOT_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(_ROOT_DIR / "back" / "NutriCare_SSAFY" / ".env")
+if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+    cred_path = (_ROOT_DIR / os.environ["GOOGLE_APPLICATION_CREDENTIALS"]).resolve()
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(cred_path)
 
 # 프로젝트 루트(AI) 기준 경로 설정
 _BASE_DIR = Path(__file__).resolve().parents[1]  # AI 디렉터리
@@ -34,6 +44,25 @@ DEFAULT_CLASS_DIR = _BASE_DIR / "data" / "train"
 
 # (model_uri, device.type) -> (model, device)
 _MODEL_CACHE: Dict[Tuple[str, str], Tuple[torch.nn.Module, torch.device]] = {}
+_AUTH_SESSION: Optional[AuthorizedSession] = None
+
+
+def _get_authed_session() -> Optional[AuthorizedSession]:
+    """GCS 인증 세션 생성 (키 없으면 None)."""
+    global _AUTH_SESSION
+    if _AUTH_SESSION:
+        return _AUTH_SESSION
+
+    cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if not cred_path:
+        return None
+
+    creds = service_account.Credentials.from_service_account_file(
+        cred_path,
+        scopes=["https://www.googleapis.com/auth/devstorage.read_only"],
+    )
+    _AUTH_SESSION = AuthorizedSession(creds)
+    return _AUTH_SESSION
 
 
 def load_class_names_from_dir(class_dir: Path) -> Optional[List[str]]:
@@ -86,7 +115,8 @@ def _load_image_from_url_or_path(photo_url: str) -> str:
     """http/https면 임시 파일에 다운로드, 아니면 로컬 경로 확인 후 반환."""
     if photo_url.startswith("http://") or photo_url.startswith("https://"):
         print(f"[INFO] 원격 이미지 다운로드: {photo_url}")
-        resp = requests.get(photo_url, timeout=10)
+        session = _get_authed_session() or requests
+        resp = session.get(photo_url, timeout=10)
         resp.raise_for_status()
         tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=Path(photo_url).suffix or ".img")
         tmp_file.write(resp.content)

@@ -8,8 +8,6 @@ Git remote repo: https://github.com/Seonyeol-Jeong/NutriCare_SSAFY/tree/main/bac
 
 
 > 11.21 수행내용
-## ✨ User 기능 구현 완료
-
 
 ## ✨ User 기능 구현 완료
 

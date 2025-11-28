@@ -43,7 +43,7 @@ public class PhotoController {
 	}
 	
 	@Operation(summary = "사용자별 사진 목록 조회", description = "userId로 업로드된 사진 메타데이터 리스트를 반환합니다.")
-	@GetMapping("/photo/user/{userId}")
+	@GetMapping("/photo")
 	public ResponseEntity<?> findListByUserId(@PathVariable("userId") long userId) {
 		try {
 			List<Photo> photos = photoService.selectListByUserId(userId);

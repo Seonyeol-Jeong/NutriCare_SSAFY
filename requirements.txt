@@ -1,0 +1,12 @@
+# 파이썬 패키지 의존성 목록
+fastapi==0.121.2
+pydantic==2.12.3
+mlflow==2.12.1
+torch==2.8.0+cu126
+torchvision==0.23.0+cu126
+pillow==11.3.0
+numpy==1.26.4
+requests==2.32.5
+uvicorn==0.38.0
+python-dotenv==1.0.1
+google-auth==2.29.0

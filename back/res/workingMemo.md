@@ -1,39 +1,42 @@
-﻿# 작업 진행상황
+# 작업 진행상황
 
 ## 프로젝트 개요
 - Spring Boot 3.5.8 + MyBatis REST API 서버, 기본 DB는 MySQL(`nutricare_db`).
 - JWT 인증/인가와 Swagger(OpenAPI 2.6.0) 설정 완료, Bearer 스키마 포함.
-- 주요 도메인: 회원(User), 게시판(Board/Comment/BoardImage), 파일 업로드; DB 스키마에는 건강/식단 관련 테이블(health_profile, diet_*)도 정의됨.
+- 주요 도메인: 회원(User), 게시판(Board/Comment/BoardImage), 파일 업로드/Photo; DB 스키마에는 건강/식단 관련 테이블(health_profile, diet_*)과 분석결과(analysis_result)도 정의됨.
+- 파일 업로드는 Google Cloud Storage 사용(gcs.* 프로퍼티, `google-cloud-storage` 의존성, prefix/bucket 기반 업로드).
 
 ## 코드 구성(핵심 경로)
-- `src/main/java/com/nutricare/config`: MyBatis 스캔, Swagger, WebMvc(정적 리소스 매핑, 인터셉터) 설정, BCrypt PasswordEncoder 빈.
-- `src/main/java/com/nutricare/interceptor`: JWT 검증, 관리자 권한 검증 인터셉터.
-- `src/main/java/com/nutricare/controller`: 회원/관리자, 게시판, 댓글, 파일 업로드 REST 컨트롤러.
+- `src/main/java/com/nutricare/config`: WebMvc/Swagger/인터셉터 설정, BCrypt PasswordEncoder, GCS 프로퍼티 바인딩(`GcsProperties`), GCS `Storage` 빈(`StorageConfig`), MyBatis 스캔. `NutriCareSsafyApplication`에서 `@EnableConfigurationProperties`로 등록.
+- `src/main/java/com/nutricare/interceptor`: JWT 검증, 관리자 권한 검증 인터셉터(request attribute에 userId/role 세팅).
+- `src/main/java/com/nutricare/controller`: 회원/관리자, 게시판, 댓글, 파일 업로드(`FileController`), 사진 메타데이터(`PhotoController`) REST 컨트롤러.
 - `src/main/java/com/nutricare/model`: dto/dao/service 계층, MyBatis 매퍼(`src/main/resources/mappers/*.xml`) 연동.
 - `src/main/java/com/nutricare/util/JwtUtil`: HS256 서명 JWT 생성·파싱, 기본 만료 1시간.
-- 설정 파일: `src/main/resources/application.properties` (로컬 MySQL, 매퍼 위치, 멀티파트 용량 등).
+- 설정 파일: `src/main/resources/application.properties` (로컬 MySQL, 매퍼 위치, 멀티파트 용량, gcs.* 설정 등).
 
 ## 구현된 기능
 - 회원: 회원가입(BCrypt 해시 저장), 로그인(JWT 발급), 내 정보 조회/수정/탈퇴, 로그아웃 응답; 관리자용 전체 회원 조회.
 - 인증/인가: `/user/me`, `/admin/**` 등에 JWT 인터셉터 적용, 관리자 인터셉터로 role=ADMIN만 접근 허용.
 - 게시판: 게시글 CRUD, 조회수 증가, 게시글 이미지 다건 등록 지원(`board_image`), 작성자 이름 조인 조회.
 - 댓글: 게시글별 댓글 조회/작성/수정/소프트삭제.
-- 파일 업로드: `POST /board-api/upload`로 `C:/nutricare_images/` 저장 후 `/images/{파일}` URL 반환, 정적 리소스 핸들러로 서빙.
+- 파일 업로드(GCS): `/file-api/upload-board-image`로 게시글 이미지 다건 업로드 후 GCS URL을 `board_image`에 저장, `/file-api/upload-with-meta`로 JWT에서 userId를 읽어 업로드+`photo` 메타데이터 INSERT를 동시에 처리. `gcs.bucket-name/base-url/prefix-board/prefix-photo` 조합으로 경로 생성.
 - DB 스키마: `res/sql.sql`에 user/health_profile/photo/analysis_result/diet_recommendation/diet_meal/board/comment/board_image 테이블 정의.
 
 ## 확인된 이슈·위험 요소
-- API 매핑: `BoardController` 삭제 API 경로 변수 오타(`{baordId}` vs `boardId`), 수정 API PathVariable 미사용으로 ID 누락 가능성(현재 수정 완료 상태 확인됨).
-- 기능 미완: 건강/식단 테이블에 대응하는 코드/엔드포인트 부재.
-- 파일 업로드: 로컬 절대경로 고정(`C:/nutricare_images/`), 운영/로컬 프로필 분리 필요.
-- 테스트 부족: 기본 `contextLoads` 외 통합/단위 테스트 없음.
-- 보안/유효성: JWT 리프레시·블랙리스트 미구현, 회원가입 이메일/입력 검증은 DB 제약 외 추가 로직 없음.
+- `AnalysisResult` DTO/DAO/매퍼가 비어 있고 서비스/컨트롤러도 없음 → DB의 분석·식단 연계 기능이 전혀 동작하지 않음.
+- `PhotoController` 사용자별 조회는 `@GetMapping("/photo")`에 `@PathVariable("userId")`를 요구해 경로가 맞지 않아 호출 불가 상태.
+- GCS 자격/경로가 로컬 절대경로(`gcs.credentials-path=C:/Users/jangs/.../concrete-fabric-...json`)와 저장된 키 파일에 의존 → 환경/보안 위험, 프로필 분리 필요.
+- Swagger 한글 설명과 주석이 다수 인코딩 깨짐(`AdminUserRestController`, `FileController`, `BoardController`, 인터셉터 등) → 문서/가독성 저하.
+- 테스트 부족: 기본 `contextLoads` 외 통합/단위 테스트 없음. 업로드 실패/권한 검증 등에 대한 테스트 부재.
+- 보안/유효성: JWT 리프레시·블랙리스트 미구현, 회원가입 입력 검증 로직은 DB 제약 외 별도 체크 없음.
 
 ## 다음에 하면 좋을 작업
-- 건강/식단 도메인 DTO/서비스/컨트롤러 설계 및 구현.
-- 파일 업로드 경로를 설정/프로필별로 분리하고 환경 변수화.
+- `analysis_result` 흐름 구현: DTO 필드/매퍼(SQL) 정의 → DAO/Service/Controller 작성, `diet_recommendation` 연계 포함.
+- `PhotoController` 사용자별 조회 엔드포인트 경로 수정 및 통합 테스트 추가.
+- GCS 설정 외부화: 프로필별 `application-{profile}.properties`/환경변수/시크릿 매니저로 버킷·자격 키 관리, 로컬 절대경로 제거.
+- Swagger/주석 인코딩 정리 및 한글 설명 복구.
 - JWT 갱신·로그아웃 처리, 작성자 검증(게시글·댓글 수정/삭제) 로직 보완.
-- 통합/단위 테스트 추가 및 DB 초기화 스크립트 자동화.
-- API 매핑/권한 검증 등 기존 엔드포인트 재점검.
+- 통합/단위 테스트 보강 및 DB 초기화/샘플 데이터 자동화.
 
 ## 진행 메모
 - [2025-11-25 17:08] BoardController 수정: 게시글 수정/삭제 API PathVariable 이름을 `boardId`로 통일, 수정 시 경로 ID를 바디에 주입하도록 수정(검수 완료).
@@ -56,6 +59,9 @@
 - [2025-11-26 17:06] PhotoController에 POST/DELETE 구현: `/photo-api/photo` POST로 Photo insert, `/photo-api/photo/{photoId}` DELETE로 삭제. 결과코드: 성공 시 201/200, 실패 시 400/500 반환.
 - [2025-11-26 17:08] PhotoController에 GET 추가: `/photo-api/photo/user/{userId}`로 사용자별 사진 메타데이터 목록 조회 (비어 있으면 204, 성공 200). @Operation summary/description 포함.
 - [2025-11-26 17:09] PhotoController 모든 메서드에 @Operation 추가: 단건 조회/사용자별 목록/등록/삭제 요약·설명 명시.
-- [2025-11-26 17:25] "다음에 하면 좋을 작업" 섹션에 analysis_result는 외부 FastAPI에서 분석·저장을 맡고, 백엔드는 결과 수신/연동 준비를 추가로 수행하도록 메모.
+- [2025-11-25 17:25] "다음에 하면 좋을 작업" 섹션에 analysis_result는 외부 FastAPI에서 분석·저장을 맡고, 백엔드는 결과 수신/연동 준비를 추가로 수행하도록 메모.
 - [2025-11-26 17:35] 분석 흐름: FastAPI는 분석 결과 JSON만 전달하고, Spring이 이를 받아 analysis_result DAO로 DB에 INSERT하는 구조로 변경.
 - [2025-11-28 12:59] 업로드 흐름 정리: 게시글 이미지는 기존처럼 파일 저장/URL 반환만 사용, 사용자 얼굴 이미지는 `/file-api/upload-with-meta`로 파일 저장과 Photo 메타데이터(DB) 기록을 함께 처리하는 이원화 방식 사용(업로드+메타 저장 동시 처리 확인).
+- [2025-12-04 16:23] 파일 업로드를 GCS 기반으로 전환: `google-cloud-storage` 의존성 추가, `GcsProperties`/`StorageConfig` 작성 및 `@EnableConfigurationProperties` 등록. `FileController`에서 게시글 이미지(`upload-board-image`)와 사진 업로드+메타 저장(`upload-with-meta`) 시 GCS 버킷/프리픽스(`board-images/`, `photo-images/`)에 업로드하고 URL을 DB에 저장. `application.properties`의 GCS 자격 경로를 로컬 사용자(`C:/Users/jangs/.../concrete-fabric-...json`)로 변경됨.
+- [2025-12-04 16:23] `AnalysisResultDao`/DTO/매퍼 파일만 추가되었으나 내용이 비어 있어 실제 분석 결과 저장 기능은 미구현 상태.
+- [2025-12-04 16:23] `PhotoController` 사용자별 조회 엔드포인트 경로 누락(`@GetMapping("/photo")` + `@PathVariable userId`)을 확인, 호출 불가 상태 기록.

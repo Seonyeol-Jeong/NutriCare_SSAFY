@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nutricare.model.dao.DietResultDao">
+
+    <resultMap id="DietResultMap" type="com.nutricare.model.dto.DietResult">
+        <id property="mealId" column="meal_id"/>
+        <result property="recId" column="rec_id"/>
+        <result property="menuName" column="menu_name"/>
+        <result property="description" column="description"/>
+        <result property="calories" column="calories"/>
+        <result property="notes" column="notes"/>
+        <result property="recipeUrl" column="recipe_url"/>
+        <result property="skincareUrl" column="skincare_url"/>
+    </resultMap>
+
+    <select id="selectByRecId" parameterType="long" resultMap="DietResultMap">
+        SELECT
+            meal_id, rec_id, menu_name, description, 
+            calories, notes, recipe_url, skincare_url
+        FROM diet_result
+        WHERE rec_id = #{recId}
+    </select>
+    
+    <select id="selectByMealId" parameterType="long" resultMap="DietResultMap">
+        SELECT
+            meal_id, rec_id, menu_name, description, 
+            calories, notes, recipe_url, skincare_url
+        FROM diet_result
+        WHERE meal_id = #{mealId}
+    </select>
+
+    <insert id="insertDietResult" parameterType="com.nutricare.model.dto.DietResult"
+            useGeneratedKeys="true" keyProperty="mealId">
+        INSERT INTO diet_result (
+            rec_id, menu_name, description, calories, notes, recipe_url, skincare_url
+        ) VALUES (
+            #{recId}, #{menuName}, #{description}, #{calories}, #{notes}, #{recipeUrl}, #{skincareUrl}
+        )
+    </insert>
+
+    <update id="updateDietResult" parameterType="com.nutricare.model.dto.DietResult">
+        UPDATE diet_result
+        SET
+            menu_name = #{menuName},
+            description = #{description},
+            calories = #{calories},
+            notes = #{notes},
+            recipe_url = #{recipeUrl},
+            skincare_url = #{skincareUrl}
+        WHERE meal_id = #{mealId}
+    </update>
+
+    <delete id="deleteDietResult" parameterType="long">
+        DELETE FROM diet_result
+        WHERE meal_id = #{mealId}
+    </delete>
+    
+    <delete id="deleteByRecId" parameterType="long">
+        DELETE FROM diet_result
+        WHERE rec_id = #{recId}
+    </delete>
+
+</mapper>

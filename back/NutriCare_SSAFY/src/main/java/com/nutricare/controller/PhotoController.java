@@ -30,7 +30,7 @@ public class PhotoController {
 	}
 	
 	@Operation(summary = "사진 메타데이터 단건 조회", description = "photoId로 사진 메타데이터를 조회합니다.")
-	@GetMapping("/photo/{photoId}")
+	@GetMapping("/photo/detail/{photoId}")
 	public ResponseEntity<?> findById(@PathVariable("photoId") long photoId) {
 		try {
 			Photo photo = photoService.selectOne(photoId);

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nutricare.config.security.CustomUserDetails;
 import com.nutricare.model.dto.Photo;
 import com.nutricare.model.service.PhotoService;
 
@@ -59,10 +61,30 @@ public class PhotoController {
 		}
 	}
 	
+	@Operation(summary = "내 사진 목록 조회 (토큰 기반)", description = "로그인한 사용자의 사진 목록을 조회합니다.")
+    @GetMapping("/photo/me")
+    public ResponseEntity<?> findMyPhotos(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUser().getUserId();
+            List<Photo> photos = photoService.selectListByUserId(userId);
+            if (photos != null && !photos.isEmpty()) {
+                return new ResponseEntity<List<Photo>>(photos, HttpStatus.OK);
+            }
+            return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+	
 	@Operation(summary = "사진 메타데이터 등록", description = "파일 업로드 후 생성된 photoUrl과 userId를 받아 photo 메타데이터를 저장합니다.")
 	@PostMapping("/photo")
-	public ResponseEntity<?> insert(@RequestBody Photo photo) {
+	public ResponseEntity<?> insert(@RequestBody Photo photo,
+									@AuthenticationPrincipal CustomUserDetails userDetails) { // ★ 1. 유저 정보 주입
 		try {
+			// ★ 2. 토큰 주인(로그인한 사람)의 ID로 강제 설정
+			photo.setUserId(userDetails.getUser().getUserId());
+			
 			int result = photoService.insert(photo);
 			if (result > 0) {
 				return new ResponseEntity<Integer>(result, HttpStatus.CREATED);

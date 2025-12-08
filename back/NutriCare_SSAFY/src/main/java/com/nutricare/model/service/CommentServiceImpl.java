@@ -22,6 +22,11 @@ public class CommentServiceImpl implements CommentService{
 	public List<Comment> selectAll(long boardId) {
 		return commentDao.selectAll(boardId);
 	}
+	
+	@Override
+    public Comment selectById(long commentId) {
+        return commentDao.selectById(commentId);
+    }
 
 	@Override
 	public int insert(Comment comment) {

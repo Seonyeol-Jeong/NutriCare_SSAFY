@@ -104,6 +104,12 @@
 			<artifactId>google-auth-library-oauth2-http</artifactId>
 			<version>1.23.0</version>
 		</dependency>
+		<!-- Spring Security 기본 스타터 -->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		
 	</dependencies>
 	<build>
 		<plugins>

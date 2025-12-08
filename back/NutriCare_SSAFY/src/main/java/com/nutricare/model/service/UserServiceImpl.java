@@ -6,18 +6,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.nutricare.model.dao.HealthProfileDao;
 import com.nutricare.model.dao.UserDao;
+import com.nutricare.model.dto.HealthProfile;
 import com.nutricare.model.dto.User;
+import com.nutricare.model.dto.UserDetailResponse;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
+    private final HealthProfileDao healthProfileDao;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserDao userDao, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserDao userDao, HealthProfileDao healthProfileDao, PasswordEncoder passwordEncoder) {
         this.userDao = userDao;
+        this.healthProfileDao = healthProfileDao;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -42,10 +47,29 @@ public class UserServiceImpl implements UserService {
         return userDao.findUserById(userId);
     }
 
-    // 4) 수정
+    // 4-1) 회원 정보 수정
     @Override
-    public boolean updateUser(User user) {
-        return userDao.updateUser(user) > 0;
+    public boolean updateUserInfo(User user) {
+        return userDao.updateUserInfo(user) > 0;
+    }
+    
+    // 4-2) 비밀번호 변경 (핵심 로직)
+    @Override
+    public boolean updatePassword(Long userId, String currentPassword, String newPassword) {
+        // 1. 현재 유저 정보 가져오기 (DB에 저장된 암호화된 비번을 알기 위해)
+        User user = userDao.findUserById(userId);
+        if (user == null) return false;
+
+        // 2. 현재 비밀번호 검증 (입력받은 평문 vs DB의 해시)
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다."); // 또는 false 반환
+        }
+
+        // 3. 새 비밀번호 암호화
+        String newHashed = passwordEncoder.encode(newPassword);
+
+        // 4. DB 업데이트
+        return userDao.updatePassword(userId, newHashed) > 0;
     }
 
     // 5) 삭제
@@ -76,4 +100,18 @@ public class UserServiceImpl implements UserService {
     public void logout(Long userId) {
         // JWT를 사용한다면 서버에서는 특별한 동작 없음 -> 추후 고민할 내용
     }
+    
+    // 8) 회원 정보 + 건강 정보 조합하여 반환
+    @Override
+    public UserDetailResponse getUserWithProfile(Long userId) {
+        // 1. 유저 기본 정보 조회
+        User user = userDao.findUserById(userId);
+        
+        // 2. 건강 정보 조회 (없으면 null 반환됨)
+        HealthProfile hp = healthProfileDao.selectByUserId(userId);
+        
+        // 3. 두 정보를 DTO 하나로 묶어서 반환
+        return new UserDetailResponse(user, hp);
+    }
+
 }

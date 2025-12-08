@@ -3,6 +3,7 @@ package com.nutricare.model.service;
 import java.util.List;
 
 import com.nutricare.model.dto.User;
+import com.nutricare.model.dto.UserDetailResponse;
 
 public interface UserService {
     // 회원가입
@@ -15,8 +16,9 @@ public interface UserService {
     User getUserDetail(Long userId);
 
     // 수정
-    boolean updateUser(User user);
-
+    boolean updateUserInfo(User user);
+    public boolean updatePassword(Long userId, String currentPassword, String newPassword);
+    
     // 삭제
     boolean deleteUser(Long userId);
 
@@ -25,4 +27,6 @@ public interface UserService {
 	
     // 로그아웃 (토큰 기반이면 Service에서 로직 없음)
     void logout(Long userId);
+    
+    UserDetailResponse getUserWithProfile(Long userId);
 }

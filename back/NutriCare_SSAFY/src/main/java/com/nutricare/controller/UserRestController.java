@@ -1,6 +1,8 @@
 package com.nutricare.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,13 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nutricare.config.security.CustomUserDetails;
 import com.nutricare.model.dto.LoginResponse;
+import com.nutricare.model.dto.PasswordUpdateRequest;
 import com.nutricare.model.dto.User;
+import com.nutricare.model.dto.UserDetailResponse;
 import com.nutricare.model.service.UserService;
 import com.nutricare.util.JwtUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 
 @Tag(name = "User API", description = "회원 관련 API (회원가입, 로그인, 내 정보 관리)")	
 @RestController
@@ -30,7 +33,6 @@ public class UserRestController {
     private final JwtUtil jwtUtil;
     
     // 의존성 주입
-    @Autowired
     public UserRestController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
@@ -65,38 +67,50 @@ public class UserRestController {
         return new LoginResponse(token, user.getUserId());
     }
 
-    // 3) 내 정보 조회
-    @Operation(
-            summary = "내 정보 조회",
-            description = "JWT에 포함된 userId를 기반으로 본인의 정보를 조회합니다.<br>"
-                        + "**Authorization: Bearer {JWT}** 필수"
-    )
+ // 3) 내 정보 조회 
+    @Operation(summary = "내 정보 조회 (통합)", description = "회원 기본 정보와 건강 프로필을 함께 반환합니다.")
     @GetMapping("/me")
-    public User getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        Long userId = userDetails.getUser().getUserId();
-
-        // userId 기반으로 DB 조회
-        return userService.getUserDetail(userId);
+    public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUser().getUserId();
+            
+            // ★ 서비스에서 조합된 데이터 가져오기
+            UserDetailResponse response = userService.getUserWithProfile(userId);
+            
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    // 4) 내 정보 수정
-    @Operation(
-            summary = "내 정보 수정",
-            description = "본인의 사용자 정보를 수정합니다.<br>"
-                        + "**Authorization: Bearer {JWT}** 필수"
-    )
-    @PatchMapping("/me")
-    public boolean updateMyInfo(@RequestBody User user, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    // 4-1) 회원정보 수정 (이름, 생년, 성별 등)
+    @Operation(summary = "내 정보 수정", description = "비밀번호를 제외한 회원 정보를 수정합니다.")
+    @PatchMapping("/me/info")
+    public ResponseEntity<?> updateMyInfo(@RequestBody User user, 
+                                          @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUser().getUserId();
+        user.setUserId(userId); // 토큰 ID로 강제 세팅
 
-        // 1) 토큰 주인(로그인한 사람)의 ID로 강제 세팅 -> 남의 정보 수정 방지
-    	Long userId = userDetails.getUser().getUserId();
-
-        // 2) 수정할 User 객체에 userId 강제 세팅
-        user.setUserId(userId);
-
-        // 3) 서비스 호출
-        return userService.updateUser(user);
+        boolean result = userService.updateUserInfo(user);
+        if (result) return ResponseEntity.ok("정보 수정 성공");
+        else return ResponseEntity.badRequest().build();
+    }
+    
+ // 4-2) 비밀번호 변경
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호 확인 후 새 비밀번호로 변경합니다.")
+    @PatchMapping("/me/password")
+    public ResponseEntity<?> updatePassword(@RequestBody PasswordUpdateRequest request,
+                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUser().getUserId();
+        
+        try {
+            boolean result = userService.updatePassword(userId, request.getCurrentPassword(), request.getNewPassword());
+            if (result) return ResponseEntity.ok("비밀번호 변경 성공");
+            else return ResponseEntity.badRequest().body("비밀번호 변경 실패");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
     }
 
     // 5) 내 정보 삭제

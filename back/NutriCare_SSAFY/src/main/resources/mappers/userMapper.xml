@@ -49,18 +49,26 @@
           AND is_deleted = 0;
     </select>
 
-    <!-- 4) 유저 정보 수정 (PATCH /user/me) -->
-    <update id="updateUser" parameterType="com.nutricare.model.dto.User">
+    <!-- 4 - 1) 유저 정보 수정(비밀번호제외) (PATCH /user/me/info) -->
+    <update id="updateUserInfo" parameterType="com.nutricare.model.dto.User">
         UPDATE user
         SET 
-            email = #{email},
-            password_hash = #{passwordHash},
             name = #{name},
             birth_year = #{birthYear},
             gender = #{gender},
             updated_at = NOW()
         WHERE user_id = #{userId}
-          AND is_deleted = 0;
+          AND is_deleted = 0
+    </update>
+    
+	<!-- 4 - 2) 유저 비밀번호 수정 (PATCH /user/me/password) -->
+    <update id="updatePassword">
+        UPDATE user
+        SET 
+            password_hash = #{passwordHash},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
     </update>
 
     <!-- 5) 유저 정보 삭제 (DELETE /user/me) -->

@@ -1,5 +1,0 @@
-JWT_SECRET=change-this-to-a-very-strong-32+char-secret-example
-
-## 파이썬용 환경변수
-GOOGLE_APPLICATION_CREDENTIALS=back/NutriCare_SSAFY/concrete-fabric-479604-h3-cd9c0c483611.json
-GCP_PROJECT=concrete-fabric-479604

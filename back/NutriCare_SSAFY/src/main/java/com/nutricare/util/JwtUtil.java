@@ -23,7 +23,7 @@ public class JwtUtil {
      * JwtUtil은 오직 환경변수 `JWT_SECRET`만 사용합니다.
      * (개발/운영 환경에서는 이 환경변수를 설정해 주세요)
      */
-    public JwtUtil(@Value("${jwt.secret:}") String secret) {
+    public JwtUtil(@Value("${JWT_SECRET:}") String secret) {
         if (secret == null || secret.isBlank() || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalArgumentException("Environment variable JWT_SECRET must be provided and at least 32 bytes long");
         }

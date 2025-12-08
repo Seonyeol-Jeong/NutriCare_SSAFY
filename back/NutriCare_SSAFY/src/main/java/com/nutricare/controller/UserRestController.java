@@ -1,6 +1,7 @@
 package com.nutricare.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nutricare.config.security.CustomUserDetails;
 import com.nutricare.model.dto.LoginResponse;
 import com.nutricare.model.dto.User;
 import com.nutricare.model.service.UserService;
@@ -70,10 +72,9 @@ public class UserRestController {
                         + "**Authorization: Bearer {JWT}** 필수"
     )
     @GetMapping("/me")
-    public User getMyInfo(HttpServletRequest request) {
+    public User getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        // 인터셉터에서 넣어준 userId 꺼내기
-        Long userId = (Long) request.getAttribute("userId");
+        Long userId = userDetails.getUser().getUserId();
 
         // userId 기반으로 DB 조회
         return userService.getUserDetail(userId);
@@ -86,10 +87,10 @@ public class UserRestController {
                         + "**Authorization: Bearer {JWT}** 필수"
     )
     @PatchMapping("/me")
-    public boolean updateMyInfo(@RequestBody User user, HttpServletRequest request) {
+    public boolean updateMyInfo(@RequestBody User user, @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        // 1) 인터셉터가 넣어준 userId 가져오기
-        Long userId = (Long) request.getAttribute("userId");
+        // 1) 토큰 주인(로그인한 사람)의 ID로 강제 세팅 -> 남의 정보 수정 방지
+    	Long userId = userDetails.getUser().getUserId();
 
         // 2) 수정할 User 객체에 userId 강제 세팅
         user.setUserId(userId);
@@ -105,10 +106,10 @@ public class UserRestController {
                         + "**Authorization: Bearer {JWT}** 필수"
     )
     @DeleteMapping("/me")
-    public boolean deleteMyAccount(HttpServletRequest request) {
+    public boolean deleteMyAccount(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         // 1) 인터셉터에서 넣어준 userId 가져오기
-        Long userId = (Long) request.getAttribute("userId");
+    	Long userId = userDetails.getUser().getUserId();
 
         // 2) 서비스 호출
         return userService.deleteUser(userId);

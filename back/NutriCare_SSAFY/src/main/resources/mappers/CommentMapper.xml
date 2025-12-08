@@ -38,6 +38,16 @@
           AND c.is_deleted = FALSE
         ORDER BY c.created_at ASC
     </select>
+    
+    <!-- 댓글 단건 조회  -->
+    <select id="selectById" parameterType="long" resultMap="commentResultMap">
+        SELECT
+        <include refid="commentColumns"/>
+        FROM comment c
+        JOIN user u ON c.user_id = u.user_id
+        WHERE c.comment_id = #{commentId}
+          AND c.is_deleted = FALSE
+    </select>
 
     <!-- 댓글 등록 -->
     <insert id="insert" parameterType="Comment"

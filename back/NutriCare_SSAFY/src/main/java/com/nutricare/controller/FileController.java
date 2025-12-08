@@ -7,9 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,6 +21,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.nutricare.config.GcsProperties;
+import com.nutricare.config.security.CustomUserDetails;
 import com.nutricare.model.dto.Board;
 import com.nutricare.model.dto.BoardImage;
 import com.nutricare.model.dto.Photo;
@@ -84,14 +86,14 @@ public class FileController {
     }
 
     @Operation(summary = "Photo 업로드(GCS) 및 메타 저장", description = "JWT에서 userId를 읽어 GCS 업로드 후 photo 테이블에 저장")
-    @PostMapping("/upload-with-meta")
+    @PostMapping(value = "/upload-with-meta", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadAndSavePhoto(@RequestParam("file") MultipartFile file,
-                                                HttpServletRequest request) {
+                                                @AuthenticationPrincipal CustomUserDetails userDetails) { // ★ 변경됨
         try {
-            Long userId = (Long) request.getAttribute("userId");
-            if (userId == null) {
-                return new ResponseEntity<>("Invalid token: userId not found", HttpStatus.UNAUTHORIZED);
-            }
+            // ★ 이전 코드 (삭제 대상): Long userId = (Long) request.getAttribute("userId");
+            // ★ 수정된 코드:
+            Long userId = userDetails.getUser().getUserId();
+            
             if (file.isEmpty()) {
                 return new ResponseEntity<>("file is required", HttpStatus.BAD_REQUEST);
             }

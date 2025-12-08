@@ -4,5 +4,40 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.nutricare.model.dao.AnalysisResultDao">
 
-    
+    <resultMap id="analysisResultMap" type="com.nutricare.model.dto.AnalysisResult">
+        <id property="analysisId" column="analysis_id"/>
+        <result property="photoId" column="photo_id"/>
+        <result property="diagnosisName" column="diagnosis_name"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="analysisColumns">
+        analysis_id, photo_id, diagnosis_name, created_at
+    </sql>
+
+    <insert id="insert" parameterType="com.nutricare.model.dto.AnalysisResult"
+            useGeneratedKeys="true" keyProperty="analysisId">
+        INSERT INTO analysis_result (photo_id, diagnosis_name)
+        VALUES (#{photoId}, #{diagnosisName})
+    </insert>
+
+    <select id="selectByPhotoId" parameterType="long" resultMap="analysisResultMap">
+        SELECT <include refid="analysisColumns"/>
+        FROM analysis_result
+        WHERE photo_id = #{photoId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectById" parameterType="long" resultMap="analysisResultMap">
+        SELECT <include refid="analysisColumns"/>
+        FROM analysis_result
+        WHERE analysis_id = #{analysisId}
+    </select>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM analysis_result
+        WHERE analysis_id = #{analysisId}
+    </delete>
+
 </mapper>

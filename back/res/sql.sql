@@ -1,4 +1,4 @@
--- 25.11.28. 11:50 수정
+-- 25.12.08. 15:00 수정
 -- 데이터베이스 생성 및 선택
 DROP DATABASE IF EXISTS nutricare_db;
 CREATE DATABASE nutricare_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -101,25 +101,27 @@ CREATE TABLE `diet_recommendation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ------------------------------------------------------------
--- 6) DIET_MEAL: 식단 추천 상세(일자/끼니별)
+-- 6) DIET_RESULT (기존 DIET_MEAL)
+-- meal_id → result_id 로 수정
+-- skincare_url 삭제
 ------------------------------------------------------------
 CREATE TABLE `diet_result` (
-  `meal_id`        BIGINT       NOT NULL AUTO_INCREMENT,
-  `rec_id`         BIGINT       NOT NULL,                 -- FK: diet_recommendation.rec_id
-  `menu_name`      VARCHAR(255) NOT NULL,                 -- 메뉴 이름
-  `description`    TEXT         NULL,                     -- 설명
-  `calories`       INT          NOT NULL DEFAULT 0,       -- 칼로리 (기본값 0)
-  `notes`          VARCHAR(255) NULL,                     -- 기타 메모
-  `recipe_url`     VARCHAR(255) NULL,                     -- 조리법 유튜브 URL
-  `skincare_url`   VARCHAR(255) NULL,                     -- 피부 관리법 URL
-  PRIMARY KEY (`meal_id`),
-  KEY `idx_meal_rec` (`rec_id`),
-  CONSTRAINT `fk_meal_rec`
+  `result_id`     BIGINT       NOT NULL AUTO_INCREMENT,  -- PK 변경됨
+  `rec_id`        BIGINT       NOT NULL,                 -- FK: diet_recommendation.rec_id
+  `menu_name`     VARCHAR(255) NOT NULL,                 -- 메뉴 이름
+  `description`   TEXT         NULL,                     -- 설명
+  `calories`      INT          NOT NULL DEFAULT 0,       -- 칼로리
+  `notes`         VARCHAR(255) NULL,                     -- 기타 메모
+  `recipe_url`    VARCHAR(255) NULL,                     -- 조리법 URL
+  PRIMARY KEY (`result_id`),                             -- PK 이름 변경됨
+  KEY `idx_result_rec` (`rec_id`),                       -- 인덱스도 의미 있게 변경
+  CONSTRAINT `fk_result_rec`
     FOREIGN KEY (`rec_id`)
     REFERENCES `diet_recommendation`(`rec_id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 
 ------------------------------------------------------------

@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nutricare.model.dao.HealthProfileDao;
 import com.nutricare.model.dto.HealthProfile;
+import com.nutricare.model.service.CalorieCalculator;
 
 @Service
 public class HealthProfileServiceImpl implements HealthProfileService {
@@ -23,17 +24,30 @@ public class HealthProfileServiceImpl implements HealthProfileService {
     @Override
     @Transactional
     public boolean saveOrUpdateHealthProfile(HealthProfile healthProfile) {
-        // 1. 기존 정보가 있는지 확인
+        // 1. 기존 프로필 존재 여부 확인
         HealthProfile existing = healthProfileDao.selectByUserId(healthProfile.getUserId());
         
         if (existing == null) {
-            // 2. 없으면 INSERT
+            // 2. 신규 INSERT
             return healthProfileDao.insert(healthProfile) > 0;
         } else {
-            // 3. 있으면 UPDATE (ID는 유지해야 하므로 기존 ID가 필요하다면 세팅, 
-            // 여기선 WHERE user_id로 업데이트하므로 ID 세팅 불필요할 수 있으나 안전하게)
+            // 3. UPDATE (ID는 기존 health_id 재사용)
             healthProfile.setHealthId(existing.getHealthId());
             return healthProfileDao.update(healthProfile) > 0;
         }
+    }
+
+    @Override
+    public CalorieCalculator.CaloriePlan calculateCaloriePlan(HealthProfile profile, Integer ageYears, String gender) {
+        return CalorieCalculator.calculate(profile, ageYears, gender);
+    }
+
+    @Override
+    public CalorieCalculator.CaloriePlan calculateCaloriePlan(Long userId, Integer ageYears, String gender) {
+        HealthProfile profile = getHealthProfile(userId);
+        if (profile == null) {
+            throw new IllegalArgumentException("health_profile not found for userId=" + userId);
+        }
+        return CalorieCalculator.calculate(profile, ageYears, gender);
     }
 }

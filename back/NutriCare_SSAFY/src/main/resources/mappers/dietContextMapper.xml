@@ -3,11 +3,11 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.nutricare.model.dao.RagDietContextDao">
+<mapper namespace="com.nutricare.model.dao.DietContextDao">
 
-    <select id="findRagDietContextByRecId"
+    <select id="findDietContextByRecId"
             parameterType="long"
-            resultType="com.nutricare.model.dto.RagDietContext">
+            resultType="com.nutricare.model.dto.DietContext">
 
         SELECT
             -- user

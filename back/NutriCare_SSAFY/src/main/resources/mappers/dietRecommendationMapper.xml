@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nutricare.model.dao.DietRecommendationDao">
+
+    <resultMap id="DietRecommendationMap" type="com.nutricare.model.dto.DietRecommendation">
+        <id property="recId" column="rec_id"/>
+        <result property="healthId" column="health_id"/>
+        <result property="analysisId" column="analysis_id"/>
+        <result property="memo" column="memo"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.nutricare.model.dto.DietRecommendation"
+            useGeneratedKeys="true" keyProperty="recId">
+        INSERT INTO diet_recommendation (health_id, analysis_id, memo)
+        VALUES (#{healthId}, #{analysisId}, #{memo})
+    </insert>
+
+    <select id="selectById" parameterType="long" resultMap="DietRecommendationMap">
+        SELECT rec_id, health_id, analysis_id, memo, created_at
+        FROM diet_recommendation
+        WHERE rec_id = #{recId}
+    </select>
+
+</mapper>

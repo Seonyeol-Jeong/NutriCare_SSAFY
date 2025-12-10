@@ -2,7 +2,10 @@ package com.nutricare.model.dto;
 
 import java.time.LocalDateTime;
 
-public class RagDietContext {
+/**
+ * 식단 생성 시 컨텍스트 정보 DTO (user + health_profile + analysis_result + diet_recommendation).
+ */
+public class DietContext {
 
     // ===== user =====
 	private Long userId;
@@ -26,7 +29,6 @@ public class RagDietContext {
     private LocalDateTime recCreatedAt;
 
     // ===== Getter/Setter =====
-    
 
     public Long getUserId() {return userId;}
     public void setUserId(Long userId) {this.userId = userId;}

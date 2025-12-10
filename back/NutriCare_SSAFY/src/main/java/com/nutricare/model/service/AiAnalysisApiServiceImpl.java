@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -17,12 +18,14 @@ public class AiAnalysisApiServiceImpl implements AiAnalysisApiService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    // FastAPI URL (환경변수나 properties로 관리하는 것이 좋음)
-    private final String aiUrl = "http://fastapi-server:8000/analyze"; 
+    // FastAPI URL (properties로 관리)
+    private final String aiUrl;
 
-    public AiAnalysisApiServiceImpl(ObjectMapper objectMapper) {
+    public AiAnalysisApiServiceImpl(ObjectMapper objectMapper,
+                                    @Value("${ai.fastapi.url:http://localhost:8000/analyze}") String aiUrl) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = objectMapper;
+        this.aiUrl = aiUrl;
     }
 
     @Override

@@ -29,29 +29,30 @@ const router = useRouter();
 const email = ref('');
 const password = ref('');
 
-const handleLogin = async () => {
+// 로그인 처리 함수 (하나로 통합)
+const onLogin = async () => {
+  // 1. 유효성 검사 (HTML required가 있지만 한 번 더 체크)
+  if (!email.value || !password.value) {
+    alert("이메일과 비밀번호를 모두 입력해주세요.");
+    return;
+  }
+
   try {
-    // 스토어의 login 액션 호출
+    // 2. 스토어의 login 액션 호출
     await userStore.login(email.value, password.value);
     
-    // 로그인 성공 시 메인 페이지로 이동
-    router.push('/');
+    // 3. 성공 시 메인 페이지로 이동
+    router.replace('/'); 
   } catch (error) {
+    // 4. 실패 시 에러 처리 (스토어에서 던진 에러를 여기서 잡음)
+    console.error('로그인 에러:', error);
     alert('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
   }
 };
 
-async function onLogin() {
-  // TODO: axios 연동/검증 추가
-  await userStore.login(email.value, password.value)
-  router.push({ name: 'Home' }).catch(() => {})
-}
-
-function goSignup() {
-  router.push({ name: 'signup' }).catch(() => {})
-}
-
-
+const goSignup = () => {
+  router.push({ name: 'signup' });
+};
 </script>
 
 <style scoped>

@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nutricare.config.security.CustomUserDetails;
+import com.nutricare.model.dto.HealthProfile;
 import com.nutricare.model.dto.LoginResponse;
 import com.nutricare.model.dto.PasswordUpdateRequest;
 import com.nutricare.model.dto.User;
 import com.nutricare.model.dto.UserDetailResponse;
+import com.nutricare.model.service.HealthProfileService;
 import com.nutricare.model.service.UserService;
 import com.nutricare.util.JwtUtil;
 
@@ -29,11 +31,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class UserRestController {
 
     private final UserService userService;
+    private final HealthProfileService healthProfileService;
     private final JwtUtil jwtUtil;
     
     // 의존성 주입
-    public UserRestController(UserService userService, JwtUtil jwtUtil) {
+    public UserRestController(UserService userService, HealthProfileService healthProfileService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.healthProfileService = healthProfileService;
         this.jwtUtil = jwtUtil;
     }
 
@@ -83,17 +87,33 @@ public class UserRestController {
         }
     }
 
-    // 4-1) 회원정보 수정 (이름, 생년, 성별 등)
-    @Operation(summary = "내 정보 수정", description = "비밀번호를 제외한 회원 정보를 수정합니다.")
+    @Operation(summary = "내 정보 통합 수정", description = "User 정보와 HealthProfile 정보를 한 번에 수정합니다.")
     @PatchMapping("/me/info")
-    public ResponseEntity<?> updateMyInfo(@RequestBody User user, 
+    public ResponseEntity<?> updateMyInfo(@RequestBody UserDetailResponse requestData, 
                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = userDetails.getUser().getUserId();
-        user.setUserId(userId); // 토큰 ID로 강제 세팅
+        try {
+            Long userId = userDetails.getUser().getUserId();
 
-        boolean result = userService.updateUserInfo(user);
-        if (result) return ResponseEntity.ok("정보 수정 성공");
-        else return ResponseEntity.badRequest().build();
+            // 1. User 정보 업데이트
+            User user = requestData.getUser();
+            if (user != null) {
+                user.setUserId(userId); // 토큰의 ID로 강제 설정 (보안)
+                userService.updateUserInfo(user);
+            }
+
+            // 2. HealthProfile 정보 업데이트 (또는 생성)
+            HealthProfile healthProfile = requestData.getHealthProfile();
+            if (healthProfile != null) {
+                healthProfile.setUserId(userId); // 토큰의 ID로 강제 설정
+                healthProfileService.saveOrUpdateHealthProfile(healthProfile);
+            }
+
+            return ResponseEntity.ok("정보 수정 성공");
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("정보 수정 실패");
+        }
     }
     
  // 4-2) 비밀번호 변경

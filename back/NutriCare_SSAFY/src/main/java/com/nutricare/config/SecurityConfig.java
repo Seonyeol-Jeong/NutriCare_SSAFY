@@ -1,5 +1,7 @@
 package com.nutricare.config;
 
+import java.util.Collections;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -8,6 +10,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.nutricare.config.security.JwtAuthenticationFilter;
 
@@ -24,6 +28,7 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
+		.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 		// 1. CSRF 비활성화 (JWT는 세션 기반이 아니라서 CSRF공격에 상대적으로 안전하므로 끈다)
 		.csrf(csrf -> csrf.disable())
 		// 2. 기본 로그인 폼 & HttpBasic 비활성화
@@ -45,5 +50,16 @@ public class SecurityConfig {
 		.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}
+	
+	private CorsConfigurationSource corsConfigurationSource() {
+        return request -> {
+            CorsConfiguration config = new CorsConfiguration();
+            config.setAllowedHeaders(Collections.singletonList("*"));
+            config.setAllowedMethods(Collections.singletonList("*"));
+            config.setAllowedOriginPatterns(Collections.singletonList("http://localhost:5173")); // 프론트엔드 주소 (Vue 기본 포트)
+            config.setAllowCredentials(true);
+            return config;
+        };
+    }
 	
 }

@@ -13,13 +13,12 @@
         <result property="calories" column="calories"/>
         <result property="notes" column="notes"/>
         <result property="recipeUrl" column="recipe_url"/>
-        <result property="skincareUrl" column="skincare_url"/>
     </resultMap>
 
     <select id="selectByRecId" parameterType="long" resultMap="DietResultMap">
         SELECT
             result_id, rec_id, menu_name, description, 
-            calories, notes, recipe_url, skincare_url
+            calories, notes, recipe_url
         FROM diet_result
         WHERE rec_id = #{recId}
     </select>
@@ -27,7 +26,7 @@
     <select id="selectByResultId" parameterType="long" resultMap="DietResultMap">
         SELECT
             result_id, rec_id, menu_name, description, 
-            calories, notes, recipe_url, skincare_url
+            calories, notes, recipe_url
         FROM diet_result
         WHERE result_id = #{resultId}
     </select>
@@ -35,9 +34,9 @@
     <insert id="insertDietResult" parameterType="com.nutricare.model.dto.DietResult"
             useGeneratedKeys="true" keyProperty="resultId">
         INSERT INTO diet_result (
-            rec_id, menu_name, description, calories, notes, recipe_url, skincare_url
+            rec_id, menu_name, description, calories, notes, recipe_url
         ) VALUES (
-            #{recId}, #{menuName}, #{description}, #{calories}, #{notes}, #{recipeUrl}, #{skincareUrl}
+            #{recId}, #{menuName}, #{description}, #{calories}, #{notes}, #{recipeUrl}
         )
     </insert>
 
@@ -48,8 +47,7 @@
             description = #{description},
             calories = #{calories},
             notes = #{notes},
-            recipe_url = #{recipeUrl},
-            skincare_url = #{skincareUrl}
+            recipe_url = #{recipeUrl}
         WHERE result_id = #{resultId}
     </update>
 

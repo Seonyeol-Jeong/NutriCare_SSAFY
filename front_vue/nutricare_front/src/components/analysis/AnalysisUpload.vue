@@ -95,12 +95,21 @@ async function analyze() {
     return
   }
 
-  try {
+try {
     const photoResp = await analysisStore.uploadPhoto(selectedFile.value)
-    // TODO: 건강 정보 전송 API가 별도로 있다면 여기서 호출
-    const resultId = photoResp?.photoId || 'result'
-    console.log('uploaded photo', photoResp, 'healthProfile', healthProfile.value)
-    router.push({ name: 'analysisResult', params: { resultId } }).catch(() => {})
+    
+    // 응답에서 photoId 추출
+    const photoId = photoResp?.photoId
+
+    if (photoId) {
+      // 주의: router의 params key는 'resultId'여야 합니다.
+      router.push({ 
+        name: 'analysisResult', 
+        params: { photoId: photoId } 
+      }).catch(() => {})
+    } else {
+      alert('분석 결과 ID를 받지 못했습니다.')
+    }
   } catch (err) {
     console.error(err)
     alert('업로드에 실패했습니다.')

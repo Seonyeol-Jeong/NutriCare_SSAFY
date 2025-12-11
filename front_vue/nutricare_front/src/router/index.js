@@ -80,7 +80,7 @@ const router = createRouter({
           component: AnalysisUploadView,
         },
         {
-          path: 'result/:resultId',
+          path: 'result/:photoId',
           name: 'analysisResult',
           component: AnalysisResultView,
         },
@@ -90,7 +90,7 @@ const router = createRouter({
           component: AnalysisListView,
         },
         {
-          path: 'detail/:resultId',
+          path: 'detail/:photoId',
           name: 'analysisDetail',
           component: AnalysisDetailView,
         },

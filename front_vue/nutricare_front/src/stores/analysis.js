@@ -23,6 +23,11 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
     const data = response.data
     user_photo.value = data
+    user_analysis_result.value = {
+      photoId: data.photoId,
+      diagnosis: data.diagnosis,
+    }
+
     if (data) {
       user_photos.value = [...user_photos.value, data]
     }
@@ -35,11 +40,29 @@ export const useAnalysisStore = defineStore('analysis', () => {
     return user_analysis_results.value
   }
 
-  async function fetchUserAnalysisResult(analysisId) {
-    if (!analysisId) throw new Error('analysisId가 필요합니다.')
-    const response = await axios.get(`/analysis-results/${analysisId}`)
-    user_analysis_result.value = response.data || {}
-    return user_analysis_result.value
+  async function fetchAnalysisResultByPhotoId(photoId) {
+    if (!photoId) throw new Error('photoId가 필요합니다.')
+    try {
+      const response = await axios.get(`/analysis-results/photos/${photoId}`)
+      // 응답이 없으면 빈 객체 (204 No Content 대비)
+      user_analysis_result.value = response.data || {}
+      return user_analysis_result.value
+    } catch (error) {
+      console.error("분석 결과 조회 실패:", error)
+      throw error
+    }
+  }
+
+  async function fetchPhoto(photoId) {
+    if (!photoId) return
+    try {
+      const response = await axios.get(`/user-photos/${photoId}`)
+      user_photo.value = response.data || {}
+      return user_photo.value
+    } catch (error) {
+      console.error("사진 조회 실패:", error)
+      throw error
+    }
   }
 
   async function fetchUserPhotos() {
@@ -55,9 +78,10 @@ export const useAnalysisStore = defineStore('analysis', () => {
     user_analysis_result,
     user_diet_recommendation,
     user_photo,
+    fetchPhoto,
     uploadPhoto,
     fetchUserAnalysisResults,
-    fetchUserAnalysisResult,
+    fetchAnalysisResultByPhotoId,
     fetchUserPhotos,
   }
 })

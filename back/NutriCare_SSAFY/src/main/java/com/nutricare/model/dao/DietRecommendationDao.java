@@ -9,4 +9,6 @@ public interface DietRecommendationDao {
 
     // rec_id로 단건 조회.
     DietRecommendation selectById(Long recId);
+    
+    DietRecommendation selectByAnalysisId(Long analysisId);
 }

@@ -4,12 +4,15 @@ import axios from '@/api/axios'
 
 export const useAnalysisStore = defineStore('analysis', () => {
   const user_analysis_results = ref([])
-  const user_diet_recommendations = ref([])
   const user_photos = ref([])
-
   const user_analysis_result = ref({})
-  const user_diet_recommendation = ref({})
   const user_photo = ref({})
+
+  // 식단 추천 관련 상태
+  const diet_recommendations = ref([])
+  const diet_loading = ref(false)
+  const diet_error = ref(null)
+
 
   async function uploadPhoto(file) {
     if (!file) throw new Error('파일이 없습니다.')
@@ -23,6 +26,12 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
     const data = response.data
     user_photo.value = data
+    user_analysis_result.value = {
+      photoId: data.photoId,
+      diagnosis: data.diagnosis,
+      analysisId: data.analysisId, // analysisId 추가
+    }
+
     if (data) {
       user_photos.value = [...user_photos.value, data]
     }
@@ -35,29 +44,141 @@ export const useAnalysisStore = defineStore('analysis', () => {
     return user_analysis_results.value
   }
 
-  async function fetchUserAnalysisResult(analysisId) {
-    if (!analysisId) throw new Error('analysisId가 필요합니다.')
-    const response = await axios.get(`/analysis-results/${analysisId}`)
-    user_analysis_result.value = response.data || {}
-    return user_analysis_result.value
+  async function fetchAnalysisResultByPhotoId(photoId) {
+    if (!photoId) throw new Error('photoId가 필요합니다.')
+    try {
+      const response = await axios.get(`/analysis-results/photos/${photoId}`)
+      // 응답이 없으면 빈 객체 (204 No Content 대비)
+      user_analysis_result.value = response.data || {}
+      return user_analysis_result.value
+    } catch (error) {
+      console.error("분석 결과 조회 실패:", error)
+      throw error
+    }
+  }
+
+  async function fetchPhoto(photoId) {
+    if (!photoId) return
+    try {
+      const response = await axios.get(`/user-photos/${photoId}`)
+      user_photo.value = response.data || {}
+      return user_photo.value
+    } catch (error) {
+      console.error("사진 조회 실패:", error)
+      throw error
+    }
   }
 
   async function fetchUserPhotos() {
-    const response = await axios.get('/user-photos/me')
-    user_photos.value = response.data || []
-    return user_photos.value
+    const photoResponse = await axios.get('/user-photos/me')
+    const photos = photoResponse.data || []
+
+    // 각 사진에 대한 분석 결과를 병렬로 가져옵니다.
+    const photosWithAnalysis = await Promise.all(
+      photos.map(async (photo) => {
+        try {
+          const analysisResponse = await axios.get(`/analysis-results/photos/${photo.photoId}`)
+          // 사진 객체에 분석 결과를 병합합니다.
+          return { ...photo, analysisResult: analysisResponse.data || {} }
+        } catch (error) {
+          // 특정 사진의 분석 결과를 가져오지 못하더라도 다른 사진들은 계속 처리합니다.
+          console.error(`ID ${photo.photoId}의 분석 결과 로딩 실패:`, error)
+          // 분석 결과가 없는 경우를 위해 빈 객체를 할당합니다.
+          return { ...photo, analysisResult: {} }
+        }
+      })
+    )
+
+    user_photos.value = photosWithAnalysis
+    return photosWithAnalysis
   }
+
+  /**
+   * 추천 ID를 기반으로 식단 추천 정보 목록을 가져옵니다.
+   * @param {string} recId - 조회할 추천의 ID
+   */
+  async function fetchDietRecommendationById(recId) {
+    if (!recId) {
+      diet_error.value = 'recId가 필요합니다.'
+      return
+    }
+
+    diet_loading.value = true
+    diet_error.value = null
+    diet_recommendations.value = [] // 배열로 초기화
+
+    try {
+      const response = await axios.get(`/diet-recommendations/${recId}`)
+      
+      // 응답 데이터(배열)를 상태에 저장합니다.
+      diet_recommendations.value = response.data || []
+      
+    } catch (e) {
+      console.error(`식단 추천 정보 조회 실패 (recId: ${recId}):`, e)
+      diet_error.value = '식단 추천 정보를 불러오는 데 실패했습니다.'
+    } finally {
+      diet_loading.value = false
+    }
+  }
+
+
+  async function fetchRecommendationHeaderByAnalysisId(analysisId) {
+    if (!analysisId) return null
+
+    try {
+      const response = await axios.get(`/diet-recommendations/analysis/${analysisId}`)
+      return response.data
+    } catch (e) {
+      if (e.response && e.response.status === 404) {
+        console.log(`analysisId ${analysisId}에 대한 기존 식단 추천이 없습니다.`)
+        return null // 추천이 없으면 null 반환
+      }
+      // 그 외 다른 에러는 그대로 throw
+      console.error('식단 추천 헤더 정보 조회 실패:', e)
+      throw e
+    }
+  }
+
+  async function createAndFetchDietRecommendation({ analysisId, memo }) {
+    diet_loading.value = true
+    diet_error.value = null
+    try {
+      // 1. 식단 추천 생성 요청 (recId 받기)
+      const createResponse = await axios.post('/diet-recommendations/create', { analysisId, memo })
+      const recId = createResponse.data?.recId
+
+      if (!recId) {
+        throw new Error("recId를 응답에서 찾을 수 없습니다.")
+      }
+      
+      // 2. 받은 recId로 상세 식단 목록 조회
+      // fetchDietRecommendationById 액션을 직접 호출하여 로직 재사용
+      await fetchDietRecommendationById(recId)
+
+    } catch (e) {
+      console.error('식단 추천 생성 또는 조회 실패:', e)
+      diet_error.value = '식단 추천을 생성하거나 불러오는 데 실패했습니다.'
+    } finally {
+      diet_loading.value = false
+    }
+  }
+
 
   return {
     user_analysis_results,
-    user_diet_recommendations,
     user_photos,
     user_analysis_result,
-    user_diet_recommendation,
     user_photo,
+    diet_recommendations,
+    diet_loading,
+    diet_error,
+    fetchPhoto,
     uploadPhoto,
     fetchUserAnalysisResults,
-    fetchUserAnalysisResult,
+    fetchAnalysisResultByPhotoId,
     fetchUserPhotos,
+    fetchDietRecommendationById,
+    createAndFetchDietRecommendation,
+    fetchRecommendationHeaderByAnalysisId, // 새로 추가된 액션
   }
 })

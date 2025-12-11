@@ -67,6 +67,18 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    async signup(signupData) {
+      try {
+        // signupData: { email, passwordHash, name, birthYear, gender }
+        await axios.post('/users', signupData)
+        return true
+      } catch (error) {
+        console.error('회원가입 요청 실패:', error)
+        // 컴포넌트에서 에러를 처리할 수 있도록 throw
+        throw error
+      }
+    },
+
     // 로그아웃
     logout() {
       this.token = null

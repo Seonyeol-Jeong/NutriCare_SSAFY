@@ -9,7 +9,6 @@ public class DietResult {
     private Integer calories; // 칼로리
     private String notes;     // 기타 메모
     private String recipeUrl;   // 레시피 URL
-    private String skincareUrl; // 피부 관리법 URL
 
     public DietResult() {
     }
@@ -17,14 +16,13 @@ public class DietResult {
     // 필요하면 생성자 추가 가능
     public DietResult(Long recId, String menuName, String description,
                       Integer calories, String notes,
-                      String recipeUrl, String skincareUrl) {
+                      String recipeUrl) {
         this.recId = recId;
         this.menuName = menuName;
         this.description = description;
         this.calories = calories;
         this.notes = notes;
         this.recipeUrl = recipeUrl;
-        this.skincareUrl = skincareUrl;
     }
 
     public Long getResultId() { return resultId; }
@@ -48,6 +46,4 @@ public class DietResult {
     public String getRecipeUrl() { return recipeUrl; }
     public void setRecipeUrl(String recipeUrl) { this.recipeUrl = recipeUrl; }
 
-    public String getSkincareUrl() { return skincareUrl; }
-    public void setSkincareUrl(String skincareUrl) { this.skincareUrl = skincareUrl; }
 }

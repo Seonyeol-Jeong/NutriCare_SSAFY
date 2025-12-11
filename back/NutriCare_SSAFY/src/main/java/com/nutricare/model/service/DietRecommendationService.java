@@ -13,4 +13,6 @@ public interface DietRecommendationService {
      * analysisId 기반으로 diet_recommendation 생성.
      */
     DietRecommendation createByAnalysisId(Long analysisId, String memo);
+    
+    DietRecommendation getByAnalysisId(Long analysisId);
 }

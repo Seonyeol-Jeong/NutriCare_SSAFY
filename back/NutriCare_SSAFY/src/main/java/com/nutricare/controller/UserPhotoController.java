@@ -117,7 +117,7 @@ public class UserPhotoController {
             if (file.isEmpty()) return ResponseEntity.badRequest().body("File is required");
             String objectName = buildObjectName(gcsProps.getPrefixPhoto(), String.valueOf(userId), file.getOriginalFilename());
             String fileUrl = uploadToGcs(objectName, file); // FileController에 있던 메서드 가져오기
-
+            Long analysisId = null;
             // 2. Photo 메타데이터 DB 저장
             Photo photo = new Photo(userId, fileUrl);
             photoService.insert(photo);
@@ -129,6 +129,7 @@ public class UserPhotoController {
                 if (diagnosis != null) {
                     AnalysisResult analysisResult = new AnalysisResult(photo.getPhotoId(), diagnosis);
                     analysisResultService.save(analysisResult);
+                    analysisId = analysisResult.getAnalysisId();
                 }
             } catch (Exception e) {
                 // AI 분석 실패는 로그만 남기고, 사진 등록은 성공으로 처리 (정책에 따라 변경 가능)
@@ -137,6 +138,7 @@ public class UserPhotoController {
 
             // 4. 응답 반환
             Map<String, Object> response = new HashMap<>();
+            response.put("analysisId", analysisId);
             response.put("photoId", photo.getPhotoId());
             response.put("fileUrl", fileUrl);
             response.put("diagnosis", diagnosis);

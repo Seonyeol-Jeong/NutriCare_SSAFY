@@ -69,4 +69,9 @@ public class DietRecommendationServiceImpl implements DietRecommendationService 
         }
         return rec;
     }
+    
+    @Override
+    public DietRecommendation getByAnalysisId(Long analysisId) {
+        return dietRecommendationDao.selectByAnalysisId(analysisId);
+    }
 }

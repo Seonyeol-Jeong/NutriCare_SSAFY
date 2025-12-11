@@ -1,21 +1,44 @@
 <template>
-  <section class="login-form">
-    <h2 class="sr-only">로그인</h2>
-    <form @submit.prevent="onLogin">
-      <div class="field">
-        <label class="icon-label" for="loginEmail">😊</label>
-        <input id="loginEmail" v-model="email" type="text" placeholder="이메일" required />
+  <div class="form-container">
+    <h2 class="title">로그인</h2>
+    <p class="subtitle">NutriCare에 오신 것을 환영합니다.</p>
+    
+    <form @submit.prevent="onLogin" class="form">
+      <div class="form-group">
+        <label for="email">이메일</label>
+        <input 
+          id="email" 
+          v-model="email" 
+          type="email" 
+          placeholder="email@example.com" 
+          required 
+          autocomplete="email"
+        />
       </div>
-      <div class="field">
-        <label class="icon-label" for="loginPw">🔒</label>
-        <input id="loginPw" v-model="password" type="password" placeholder="비밀번호" required />
+      
+      <div class="form-group">
+        <label for="password">비밀번호</label>
+        <input 
+          id="password" 
+          v-model="password" 
+          type="password" 
+          placeholder="비밀번호를 입력하세요" 
+          required 
+          autocomplete="current-password"
+        />
       </div>
-      <div class="actions">
-        <button type="button" class="secondary" @click="goSignup">회원가입</button>
-        <button type="submit" class="primary">로그인</button>
-      </div>
+      
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+      
+      <button type="submit" class="submit-button" :disabled="isLoading">
+        {{ isLoading ? '로그인 중...' : '로그인' }}
+      </button>
     </form>
-  </section>
+    
+    <div class="form-footer">
+      <p>계정이 없으신가요? <router-link :to="{ name: 'userJoin' }">회원가입</router-link></p>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -28,94 +51,132 @@ const router = useRouter();
 
 const email = ref('');
 const password = ref('');
+const isLoading = ref(false);
+const errorMessage = ref('');
 
-// 로그인 처리 함수 (하나로 통합)
 const onLogin = async () => {
-  // 1. 유효성 검사 (HTML required가 있지만 한 번 더 체크)
   if (!email.value || !password.value) {
-    alert("이메일과 비밀번호를 모두 입력해주세요.");
+    errorMessage.value = "이메일과 비밀번호를 모두 입력해주세요.";
     return;
   }
 
+  isLoading.value = true;
+  errorMessage.value = '';
+
   try {
-    // 2. 스토어의 login 액션 호출
     await userStore.login(email.value, password.value);
-    
-    // 3. 성공 시 메인 페이지로 이동
     router.replace('/'); 
   } catch (error) {
-    // 4. 실패 시 에러 처리 (스토어에서 던진 에러를 여기서 잡음)
     console.error('로그인 에러:', error);
-    alert('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
+    errorMessage.value = '이메일 또는 비밀번호가 올바르지 않습니다.';
+  } finally {
+    isLoading.value = false;
   }
-};
-
-const goSignup = () => {
-  router.push({ name: 'signup' });
 };
 </script>
 
 <style scoped>
-.login-form {
+.form-container {
   width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 24px 0 32px;
+  max-width: 400px;
+  margin: auto;
+  padding: 40px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 32px;
+}
+
+.form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
-.field {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  align-items: center;
-  border: 1px solid #b7b7b7;
-  padding: 8px 10px;
-  gap: 8px;
-}
-
-.icon-label {
-  text-align: center;
-  font-size: 18px;
-}
-
-input {
-  border: none;
-  outline: none;
-  font-size: 14px;
-  padding: 6px 4px;
-}
-
-.actions {
+.form-group {
   display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 10px;
+  flex-direction: column;
 }
 
-.primary,
-.secondary {
-  padding: 10px 20px;
-  background: #d8d8d8;
-  border: 1px solid #aeaeae;
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  padding: 12px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #6b55c7;
+  box-shadow: 0 0 0 3px rgba(107, 85, 199, 0.1);
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+  text-align: center;
+  margin-top: -8px;
+  margin-bottom: 8px;
+}
+
+.submit-button {
+  padding: 14px;
+  background: #6b55c7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  min-width: 120px;
+  transition: background-color 0.2s;
+  margin-top: 12px;
 }
 
-.secondary {
-  background: #efefef;
+.submit-button:hover:not(:disabled) {
+  background-color: #5a45b0;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+.submit-button:disabled {
+  background-color: #c5bada;
+  cursor: not-allowed;
+}
+
+.form-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.form-footer a {
+  color: #6b55c7;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
 }
 </style>

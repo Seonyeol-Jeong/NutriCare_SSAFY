@@ -24,5 +24,13 @@
         FROM diet_recommendation
         WHERE rec_id = #{recId}
     </select>
+    
+    <select id="selectByAnalysisId" parameterType="long" resultMap="DietRecommendationMap">
+	    SELECT rec_id, health_id, analysis_id, memo, created_at
+	    FROM diet_recommendation
+	    WHERE analysis_id = #{analysisId}
+	    ORDER BY created_at DESC
+	    LIMIT 1
+	</select>
 
 </mapper>

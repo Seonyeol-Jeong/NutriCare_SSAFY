@@ -88,7 +88,7 @@ public class DietRecommendationController {
             }
 
             Long ownerUserId = resolveOwnerUserId(body);
-            checkAuthority(ownerUserId, userDetails);
+            checkAuthorityByUserId(ownerUserId, userDetails);
 
             DietRecommendation rec;
             if (body.getPhotoId() != null) {
@@ -158,7 +158,7 @@ public class DietRecommendationController {
             @PathVariable("recId") Long recId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            checkAuthority(recId, userDetails); // 권한 검사
+            checkAuthorityByRecId(recId, userDetails); // 권한 검사
 
             List<DietResult> list = dietResultService.getDietResultsByRecId(recId);
             if (list != null && !list.isEmpty()) {
@@ -183,7 +183,7 @@ public class DietRecommendationController {
         try {
             DietResult result = dietResultService.getDietResultById(resultId);
             if (result != null) {
-                checkAuthority(result.getRecId(), userDetails); // 소유자 확인
+                checkAuthorityByRecId(result.getRecId(), userDetails); // 소유자 확인
                 return new ResponseEntity<>(result, HttpStatus.OK);
             }
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -208,7 +208,7 @@ public class DietRecommendationController {
                 return new ResponseEntity<>("식단 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
             }
             
-            checkAuthority(origin.getRecId(), userDetails); // 소유자 확인
+            checkAuthorityByRecId(origin.getRecId(), userDetails); // 소유자 확인
             
             boolean isDeleted = dietResultService.deleteDietResult(resultId);
             if (isDeleted) {
@@ -243,7 +243,7 @@ public class DietRecommendationController {
         return photo.getUserId();
     }
 
-    private void checkAuthority(Long ownerUserId, CustomUserDetails userDetails) {
+    private void checkAuthorityByUserId(Long ownerUserId, CustomUserDetails userDetails) {
         if (userDetails.getUser().getRole().equals("ADMIN")) {
             return;
         }
@@ -252,7 +252,7 @@ public class DietRecommendationController {
         }
     }
 
-    private void checkAuthority(Long recId, CustomUserDetails userDetails) {
+    private void checkAuthorityByRecId(Long recId, CustomUserDetails userDetails) {
         DietContext context = dietContextService.getContextForRec(recId);
         if (userDetails.getUser().getRole().equals("ADMIN")) {
             return;

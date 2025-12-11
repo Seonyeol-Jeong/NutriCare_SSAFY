@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nutricare.model.dto.DietContext;
 import com.nutricare.model.service.CalorieCalculator.CaloriePlan;
-import com.nutricare.model.service.DietRuleEngine.RuleText;
 
 @Service
 public class DietLlmServiceImpl implements DietLlmService {

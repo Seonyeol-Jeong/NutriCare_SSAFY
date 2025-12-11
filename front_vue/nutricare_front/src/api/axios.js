@@ -2,23 +2,35 @@ import axios from 'axios';
 import { useUserStore } from '@/stores/user';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: '/api',
   timeout: 5000,   // 요청 타임아웃 (5초)
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // cross-origin 요청 시 쿠키를 포함시키기 위한 설정
 });
 
 // 2. 요청 인터셉터 설정
 instance.interceptors.request.use(
   (config) => {
-    // 로컬 스토리지에서 토큰 가져오기
-    const token = localStorage.getItem('accessToken');
+    const publicPaths = [
+      { url: '/users', method: 'post' },
+      { url: '/users/login', method: 'post' },
+    ];
 
-    // 토큰이 있으면 헤더에 담기
-    if (token) {
-      // 백엔드 JwtAuthenticationFilter에서 "Bearer " 접두사를 체크하므로 포함해야 함
-      config.headers['Authorization'] = `Bearer ${token}`; 
+    const requestUrl = config.url || '';
+    const requestMethod = (config.method || '').toLowerCase();
+
+    const isPublicPath = publicPaths.some(
+      (path) => requestUrl.endsWith(path.url) && requestMethod === path.method
+    );
+
+    // 공개 경로가 아닐 경우에만 토큰 추가
+    if (!isPublicPath) {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
     }
 
     return config; // 변경된 설정으로 요청 계속 진행

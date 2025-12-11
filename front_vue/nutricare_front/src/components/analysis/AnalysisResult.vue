@@ -22,6 +22,9 @@
         <button class="primary" type="button" @click="goDiet">
           맞춤 식단 추천 받기
         </button>
+        <button class="secondary" type="button" @click="goMyAnalysisList">
+          내 분석 목록 보기
+        </button>
       </div>
     </div>
   </section>
@@ -31,11 +34,13 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAnalysisStore } from '@/stores/analysis'
+import { useUserStore } from '@/stores/user' // user store import 추가
 import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const route = useRoute()
 const analysisStore = useAnalysisStore()
+const userStore = useUserStore() // user store 인스턴스 생성
 
 // 스토어 상태를 반응형으로 가져옴
 const { user_analysis_result, user_photo } = storeToRefs(analysisStore)
@@ -67,7 +72,16 @@ onMounted(async () => {
 function goDiet() {
   // 식단 추천 생성/상세 페이지로 이동 (photoId를 기반으로 생성 요청을 하거나 조회)
   // 예시: analysisDetail로 가면서 photoId를 넘김
-  router.push({ name: 'analysisDetail', params: { resultId: photoId } })
+  router.push({ name: 'analysisDetail', params: { photoId: photoId } }) // resultId 대신 photoId 사용
+}
+
+function goMyAnalysisList() {
+  if (userStore.userId) {
+    router.push({ name: 'analysisList', params: { userId: userStore.userId } }).catch(() => {})
+  } else {
+    alert("사용자 정보를 불러올 수 없습니다.")
+    // 로그인 페이지 등으로 리디렉션하거나 다른 처리
+  }
 }
 </script>
 
@@ -127,6 +141,8 @@ function goDiet() {
 
 .actions {
   margin-top: 10px;
+  display: flex; /* 버튼들을 가로로 나열하기 위해 flex 추가 */
+  gap: 10px; /* 버튼들 사이의 간격 */
 }
 
 .primary {
@@ -143,6 +159,23 @@ function goDiet() {
 
 .primary:hover {
   background: #5a45b0;
+}
+
+/* Secondary button style */
+.secondary {
+  padding: 12px 24px;
+  background: #f0f0f0; /* 밝은 배경 */
+  color: #333; /* 어두운 텍스트 */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.secondary:hover {
+  background: #e0e0e0;
 }
 
 .loading-msg {

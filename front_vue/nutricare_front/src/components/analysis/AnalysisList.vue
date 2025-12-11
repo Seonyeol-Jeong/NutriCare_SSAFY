@@ -3,17 +3,21 @@
     <table>
       <thead>
         <tr>
+          <th>순번</th>
           <th>분석 날짜</th>
+          <th>사진이름</th>
           <th>분석명</th>
         </tr>
       </thead>
       <tbody>
         <tr
-          v-for="item in pagedItems"
+          v-for="(item, index) in pagedItems"
           :key="item.id"
           @click="goDetail(item.id)"
         >
+          <td>{{ (page - 1) * pageSize + index + 1 }}</td>
           <td class="with-icon">📅 {{ item.date }}</td>
+          <td>{{ item.photoName }}</td>
           <td>{{ item.title }}</td>
         </tr>
       </tbody>
@@ -36,21 +40,34 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAnalysisStore } from '@/stores/analysis'
 
 const router = useRouter()
+const store = useAnalysisStore()
 
-const items = ref([
-  { id: 'r1', date: '2025-01-01', title: '분석명' },
-  { id: 'r2', date: '2025-01-02', title: '분석명' },
-  { id: 'r3', date: '2025-01-03', title: '분석명' },
-  { id: 'r4', date: '2025-01-04', title: '분석명' },
-  { id: 'r5', date: '2025-01-05', title: '분석명' },
-  { id: 'r6', date: '2025-01-06', title: '분석명' },
-  { id: 'r7', date: '2025-01-07', title: '분석명' },
-  { id: 'r8', date: '2025-01-08', title: '분석명' },
-])
+onMounted(() => {
+  store.fetchUserPhotos()
+})
+
+function extractPhotoName(url) {
+  if (!url || !url.includes('_')) {
+    return 'N/A'
+  }
+  return url.split('_').pop()
+}
+
+const items = computed(() =>
+  [...store.user_photos]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map((p) => ({
+      id: p.photoId,
+      date: new Date(p.createdAt).toLocaleString(),
+      photoName: extractPhotoName(p.photoUrl),
+      title: p.analysisResult?.diagnosisName || '분석 대기중',
+    }))
+)
 
 const page = ref(1)
 const pageSize = 7
@@ -61,7 +78,7 @@ const pagedItems = computed(() => {
 })
 
 function goDetail(id) {
-  router.push({ name: 'analysisDetail', params: { resultId: id } }).catch(() => {})
+  router.push({ name: 'analysisDetail', params: { photoId: id } }).catch(() => {})
 }
 </script>
 

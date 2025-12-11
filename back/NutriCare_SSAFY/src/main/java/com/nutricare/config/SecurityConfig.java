@@ -38,7 +38,7 @@ public class SecurityConfig {
 		.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		// 4. URL별 권한 설정 (기존 WebConfig의 인터셉터 설정을 여기서 대체합니다)
 		.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/api/users/login", "/user", "/api/users").permitAll()
+				.requestMatchers("/api/users/login", "/api/users").permitAll()
                 .requestMatchers("/images/**", "/css/**", "/js/**", "/favicon.ico").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/boards/**").permitAll()

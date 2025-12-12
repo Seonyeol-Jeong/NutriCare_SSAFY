@@ -1,12 +1,18 @@
 <template>
-  <section class="page-describe">
+  <section class="page-describe container">
+    <h2 class="mb-4">NutriCare</h2>
     <div class="hero">
       <div class="hero-visual">
         <div ref="trackRef" class="hero-track" role="list" aria-label="슬라이드 목록" @scroll="handleScroll"
           @wheel.prevent="handleWheel">
-          <div class="hero-slide" v-for="slide in slides" :key="slide.id" role="listitem">
+          <div class="hero-slide" v-for="(slide, idx) in slides" :key="slide.id" role="listitem">
             <div class="hero-image">
-              <img :src="slide.image" :alt="slide.title" class="hero-photo" />
+              <img
+                :src="slide.image"
+                :alt="slide.title"
+                class="hero-photo"
+                :class="{ active: idx === currentIndex }"
+              />
             </div>
           </div>
         </div>
@@ -91,6 +97,8 @@ function goToAnalysis() {
   padding: 32px 16px 48px;
   background: #f8f5eb;
   box-sizing: border-box;
+  border-radius: 10px; /* Soften the corners */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); /* Soft, blurred shadow */
 }
 
 .hero {
@@ -102,9 +110,9 @@ function goToAnalysis() {
 
 .hero-visual {
   width: 100%;
-  border: 1px solid #d4d4d4;
-  background: #fdfdfd;
-  padding: 12px;
+  border: none;
+  background: transparent;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -118,7 +126,7 @@ function goToAnalysis() {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  padding: 6px 4px 12px;
+  padding: 0;
   overscroll-behavior-x: contain;
 }
 
@@ -163,6 +171,17 @@ function goToAnalysis() {
   height: auto;
   object-fit: contain;
   display: block;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  margin: 0;
+  padding: 0;
+  mask-image: radial-gradient(circle, black 80%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: radial-gradient(circle, black 80%, rgba(0, 0, 0, 0) 100%); /* For Webkit browsers */
+  mask-mode: alpha; /* Standard for mask-image */
+}
+
+.hero-photo.active {
+  opacity: 1;
 }
 
 .hero-dots {

@@ -1,5 +1,5 @@
 <template>
-  <section class="engineering-describe">
+  <section class="engineering-describe container">
     <div class="text-hero">
       <div class="hero-mark">NutriCare는...</div>
       <div class="hero-copy">

@@ -7,6 +7,7 @@ public class Comment {
     private Long commentId;        // comment.comment_id
     private Long boardId;          // FK -> board.board_id
     private Long userId;           // 작성자 FK
+    private String userName;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -18,13 +19,14 @@ public class Comment {
     public Comment() {
     }
 
-    public Comment(Long commentId, Long boardId, Long userId,
+    public Comment(Long commentId, Long boardId, Long userId, String userName,
                       String content,
                       LocalDateTime createdAt, LocalDateTime updatedAt,
                       boolean deleted, String authorName) {
         this.commentId = commentId;
         this.boardId = boardId;
         this.userId = userId;
+        this.userName = userName;
         this.content = content;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -32,8 +34,6 @@ public class Comment {
         this.authorName = authorName;
     }
     
-    
-
     public Comment(String content) {
 		this.content = content;
 	}
@@ -62,7 +62,15 @@ public class Comment {
         this.userId = userId;
     }
 
-    public String getContent() {
+    public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
+	public String getContent() {
         return content;
     }
 
@@ -104,10 +112,8 @@ public class Comment {
 
 	@Override
 	public String toString() {
-		return "Comment [commentId=" + commentId + ", boardId=" + boardId + ", userId=" + userId + ", content="
-				+ content + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", deleted=" + deleted
-				+ ", authorName=" + authorName + "]";
+		return "Comment [commentId=" + commentId + ", boardId=" + boardId + ", userId=" + userId + ", userName="
+				+ userName + ", content=" + content + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt
+				+ ", deleted=" + deleted + ", authorName=" + authorName + "]";
 	}
-    
-    
 }

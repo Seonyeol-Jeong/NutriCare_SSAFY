@@ -7,6 +7,7 @@ public class Board {
 
     private Long boardId;          // board.board_id
     private Long userId;           // 작성자 FK
+    private String userName;
     private String title;
     private String content;
     private String category;       // 자유/질문/공지 등 문자열로 관리
@@ -24,12 +25,13 @@ public class Board {
     public Board() {
     }
 
-    public Board(Long boardId, Long userId, String title, String content, String category, Integer viewCount,
+    public Board(Long boardId, Long userId, String userName, String title, String content, String category, Integer viewCount,
 			LocalDateTime createdAt, LocalDateTime updatedAt, List<BoardImage> images, boolean deleted,
 			String authorName) {
 		super();
 		this.boardId = boardId;
 		this.userId = userId;
+		this.userName = userName;
 		this.title = title;
 		this.content = content;
 		this.category = category;
@@ -69,8 +71,16 @@ public class Board {
     public void setUserId(Long userId) {
         this.userId = userId;
     }
+    
+    public String getUserName() {
+		return userName;
+	}
 
-    public String getTitle() {
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
+	public String getTitle() {
         return title;
     }
 
@@ -144,10 +154,10 @@ public class Board {
 
 	@Override
 	public String toString() {
-		return "Board [boardId=" + boardId + ", userId=" + userId + ", title=" + title + ", content=" + content
-				+ ", category=" + category + ", viewCount=" + viewCount + ", createdAt=" + createdAt + ", updatedAt="
-				+ updatedAt + ", images=" + images + ", deleted=" + deleted + ", authorName=" + authorName + "]";
+		return "Board [boardId=" + boardId + ", userId=" + userId + ", userName=" + userName + ", title=" + title
+				+ ", content=" + content + ", category=" + category + ", viewCount=" + viewCount + ", createdAt="
+				+ createdAt + ", updatedAt=" + updatedAt + ", images=" + images + ", deleted=" + deleted
+				+ ", authorName=" + authorName + "]";
 	}
-
     
 }

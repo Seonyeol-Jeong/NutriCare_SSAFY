@@ -17,6 +17,7 @@ import UserLoginView from '@/views/user/UserLoginView.vue'
 import UserDetailView from '@/views/user/UserDetailView.vue'
 import UserProfileView from '@/views/user/UserProfileView.vue'
 import UserPasswordView from '@/views/user/UserPasswordView.vue'
+import MyBoardListView from '@/views/board/MyBoardListView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -125,6 +126,11 @@ const router = createRouter({
       path: '/user/detail/:userid',
       name: 'userDetail',
       component: UserDetailView,
+    },
+    {
+      path: '/user/myboards',
+      name: 'myBoardList',
+      component: MyBoardListView,
     },
     {
       path: '/user/updateProfile/:userid',

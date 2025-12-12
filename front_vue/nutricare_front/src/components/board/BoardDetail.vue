@@ -1,179 +1,265 @@
 <template>
   <section class="board-detail">
-    <header class="title-row">
-      <div>
-        <h2 class="title">{{ post.title }}</h2>
-        <div class="meta">
-          <span class="category">{{ post.category || '카테고리 없음' }}</span>
-          <span class="dot">·</span>
-          <span class="author">작성자: {{ post.author }}</span>
-          <span class="dot">·</span>
-          <span class="views">조회수 {{ post.views }}</span>
-          <span class="dot">·</span>
-          <span class="date">{{ post.created_at }}</span>
-        </div>
+    <div class="card shadow-sm">
+      <div class="card-header bg-light py-3">
+        <h2 class="mb-0 h5">게시글 상세</h2>
       </div>
-    </header>
+      <div class="card-body">
+        <div v-if="isLoading" class="loading-spinner">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
 
-    <div class="content" v-text="post.content"></div>
+        <div v-else-if="hasError" class="alert alert-danger" role="alert">
+          {{ hasError }}
+        </div>
 
-    <div class="images" v-if="post.images.length">
-      <div
-        v-for="img in post.images"
-        :key="img.image_id"
-        class="image-item"
-      >
-        <span>🖼️</span>
-        <a href="#" @click.prevent="viewImage(img.image_url)">{{ img.image_url }}</a>
+        <div v-else-if="!board" class="alert alert-info" role="alert">
+          게시글을 찾을 수 없습니다.
+        </div>
+
+        <template v-else>
+          <div class="d-flex justify-content-between align-items-baseline mb-3">
+            <h3 class="card-title">{{ board.title }}</h3>
+            <div class="text-muted small">
+              <span class="badge bg-secondary me-2">{{ board.category }}</span>
+              <span>작성자: {{ board.userName }}</span>
+              <span class="mx-1">·</span>
+              <span>조회수 {{ board.viewCount }}</span>
+              <span class="mx-1">·</span>
+              <span>{{ formatDate(board.createdAt) }}</span>
+            </div>
+          </div>
+          <hr />
+
+          <div class="content mb-4" v-html="board.content"></div>
+          
+          <div class="images-preview mb-4 row g-2" v-if="board.images && board.images.length">
+            <div class="col-md-4 col-sm-6 col-12" v-for="img in board.images" :key="img.imageId">
+              <img :src="img.imageUrl" class="img-fluid rounded shadow-sm" alt="게시글 이미지" />
+            </div>
+          </div>
+
+          <div class="actions d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary" @click="goList">목록</button>
+            <template v-if="isAuthor">
+              <button type="button" class="btn btn-primary" @click="editBoard">수정</button>
+              <button type="button" class="btn btn-danger" @click="deleteConfirm">삭제</button>
+            </template>
+          </div>
+        </template>
       </div>
     </div>
 
-    <div class="attachment" v-if="post.attachment">
-      <span>📁</span>
-      <a href="#" @click.prevent="download">{{ post.attachment }}</a>
-    </div>
+    <!-- Comment Section -->
+    <div class="card mt-4 shadow-sm">
+      <div class="card-header bg-light py-3">
+        <h3 class="mb-0 h6">댓글</h3>
+      </div>
+      <div class="card-body">
+        <!-- Comment Create Form -->
+        <form @submit.prevent="handleCommentSubmit" class="mb-4">
+          <div class="input-group">
+            <textarea
+              v-model="newCommentContent"
+              class="form-control"
+              placeholder="댓글을 입력하세요..."
+              rows="2"
+              required
+            ></textarea>
+            <button class="btn btn-outline-primary" type="submit">등록</button>
+          </div>
+        </form>
 
-    <section class="comments">
-      <h3 class="comment-title">댓글</h3>
-      <article class="comment" v-for="comment in comments" :key="comment.id">
-        <div class="meta">
-          <span class="author">{{ comment.author }}</span>
-          <span class="date">{{ comment.date }}</span>
+        <!-- Comment List -->
+        <div v-if="isCommentLoading" class="text-center">
+          <div class="spinner-border spinner-border-sm" role="status">
+            <span class="visually-hidden">Loading comments...</span>
+          </div>
         </div>
-        <p class="body">{{ comment.body }}</p>
-      </article>
-    </section>
+        <ul v-else class="list-group list-group-flush">
+          <li v-if="comments.length === 0" class="list-group-item text-center text-muted">
+            작성된 댓글이 없습니다.
+          </li>
+          <li v-for="comment in comments" :key="comment.commentId" class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <span class="fw-bold me-2">{{ comment.userName }}</span>
+                <span class="text-muted small">{{ formatDate(comment.createdAt) }}</span>
+              </div>
+              <div v-if="userStore.userInfo?.userId === comment.userId" class="actions">
+                <button class="btn btn-sm btn-link text-decoration-none" @click="toggleEditMode(comment)">수정</button>
+                <button class="btn btn-sm btn-link text-decoration-none text-danger" @click="handleCommentDelete(comment.commentId)">삭제</button>
+              </div>
+            </div>
+            <div v-if="editingCommentId !== comment.commentId" class="mt-2">
+              {{ comment.content }}
+            </div>
+            <div v-else class="mt-2">
+              <form @submit.prevent="handleCommentUpdate(comment)">
+                <textarea v-model="editingCommentContent" class="form-control form-control-sm" rows="2"></textarea>
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" @click="toggleEditMode(null)">취소</button>
+                  <button type="submit" class="btn btn-sm btn-primary">저장</button>
+                </div>
+              </form>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useBoardStore } from '@/stores/board';
+import { useUserStore } from '@/stores/user';
+import { useCommentStore } from '@/stores/comment';
+import { storeToRefs } from 'pinia';
 
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
+const boardStore = useBoardStore();
+const userStore = useUserStore();
+const commentStore = useCommentStore();
 
-const post = ref({
-  id: route.params.id,
-  user_id: 1,
-  author: 'user_id',
-  title: '게시글 제목 예시',
-  category: '카테고리',
-  content: '내용 예시입니다.',
-  view_count: 123,
-  views: 123,
-  created_at: '2025-01-10 12:00',
-  attachment: '첨부파일.file',
-  images: [
-    { image_id: 1, image_url: 'image1.png' },
-    { image_id: 2, image_url: 'image2.png' },
-  ],
-})
+const { board, isLoading, hasError } = storeToRefs(boardStore);
+const { comments, isLoading: isCommentLoading } = storeToRefs(commentStore);
+const { userInfo } = storeToRefs(userStore); // userInfo를 storeToRefs에서 가져옴
 
-const comments = ref([
-  { id: 1, author: 'user_id', date: '2025-12-05 17:36', body: '댓글 내용' },
-  { id: 2, author: 'user_id', date: '2025-12-05 17:36', body: '댓글 내용' },
-  { id: 3, author: 'user_id', date: '2025-12-05 17:36', body: '댓글 내용' },
-])
+const boardId = computed(() => route.params.id);
 
-function download() {
-  // TODO: 파일 다운로드 구현
-  alert('파일 다운로드')
+const newCommentContent = ref('');
+const editingCommentId = ref(null);
+const editingCommentContent = ref('');
+
+watch(boardId, (newId) => {
+  if (newId) {
+    boardStore.fetchBoardById(newId);
+    commentStore.fetchComments(newId);
+  } else {
+    boardStore.board = null;
+    commentStore.comments = [];
+  }
+}, { immediate: true });
+
+const isAuthor = computed(() => {
+  return userInfo.value && board.value && userInfo.value.userId === board.value.userId;
+});
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleString('ko-KR');
+};
+
+function goList() {
+  router.push({ name: 'boardList' }).catch(() => {});
 }
 
-function viewImage(url) {
-  // TODO: 이미지 뷰어/다운로드 구현
-  alert(`이미지 보기: ${url}`)
+function editBoard() {
+  router.push({ name: 'boardUpdate', params: { id: board.value.boardId } }).catch(() => {});
+}
+
+async function deleteConfirm() {
+  if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+    try {
+      await boardStore.deleteBoard(board.value.boardId);
+      alert('게시글이 삭제되었습니다.');
+      router.push({ name: 'boardList' });
+    } catch (error) {
+      alert('게시글 삭제에 실패했습니다.');
+    }
+  }
+}
+
+async function handleCommentSubmit() {
+  if (!newCommentContent.value.trim()) return;
+  if (!userInfo.value?.name) {
+    alert('로그인 후 댓글을 작성할 수 있습니다.');
+    return;
+  }
+  try {
+    await commentStore.createComment({
+      boardId: boardId.value,
+      content: newCommentContent.value,
+      userName: userInfo.value.name, // userName 추가
+    });
+    newCommentContent.value = ''; // Reset input
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function handleCommentDelete(commentId) {
+  if (confirm('댓글을 삭제하시겠습니까?')) {
+    try {
+      await commentStore.deleteComment({
+        boardId: boardId.value,
+        commentId,
+      });
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+}
+
+function toggleEditMode(comment) {
+  if (comment && editingCommentId.value !== comment.commentId) {
+    editingCommentId.value = comment.commentId;
+    editingCommentContent.value = comment.content;
+  } else {
+    editingCommentId.value = null;
+    editingCommentContent.value = '';
+  }
+}
+
+async function handleCommentUpdate(comment) {
+  if (!editingCommentContent.value.trim()) return;
+  try {
+    await commentStore.updateComment({
+      boardId: boardId.value,
+      commentId: comment.commentId,
+      content: editingCommentContent.value,
+    });
+    toggleEditMode(null); // Exit edit mode
+  } catch (error) {
+    alert(error.message);
+  }
 }
 </script>
 
 <style scoped>
 .board-detail {
   max-width: 900px;
-  margin: 0 auto;
-  padding: 24px 16px 40px;
-  background: #f8f5eb;
-  box-sizing: border-box;
+  margin: 40px auto;
+  padding: 0 16px;
 }
 
-.title-row {
-  border-bottom: 1px solid #aaa;
-  padding-bottom: 10px;
-}
-
-.title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-  color: #777;
-  font-size: 13px;
-}
-
-.dot {
-  color: #aaa;
+.card-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .content {
-  margin: 18px 0 24px;
   min-height: 200px;
-  color: #444;
+  line-height: 1.6;
+  white-space: pre-wrap; /* Preserve newlines and spaces */
 }
 
-.images {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
+.images-preview img {
+  max-height: 200px; /* Limit height of preview images */
+  object-fit: cover;
+  width: 100%;
 }
 
-.image-item {
+.loading-spinner, .alert {
+  min-height: 150px;
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 6px;
-}
-
-.attachment {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  border-top: 1px solid #aaa;
-  border-bottom: 1px solid #aaa;
-}
-
-
-.comments {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.comment-title {
-  margin: 0 0 6px;
-  font-size: 15px;
-}
-
-.comment {
-  border-bottom: 1px solid #d0d0d0;
-  padding-bottom: 8px;
-}
-
-.meta {
-  display: flex;
-  justify-content: space-between;
-  color: #777;
-  font-size: 13px;
-}
-
-.body {
-  margin: 6px 0 0;
-  color: #333;
 }
 </style>

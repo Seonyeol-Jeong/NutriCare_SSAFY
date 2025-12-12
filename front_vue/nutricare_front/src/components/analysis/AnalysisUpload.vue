@@ -1,5 +1,5 @@
 <template>
-  <div class="upload-container">
+  <div class="upload-container ">
     <h2 class="title">AI 피부 분석</h2>
     <p class="subtitle">얼굴 사진을 업로드하여 피부 상태를 분석하고 맞춤 식단을 추천받아 보세요.</p>
     

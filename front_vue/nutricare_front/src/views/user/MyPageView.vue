@@ -6,6 +6,7 @@
         <button type="button" class="action" @click="goUserDetail">내 정보 보기</button>
         <button type="button" class="action" @click="goUpdateProfile">계정 수정</button>
         <button type="button" class="action" @click="goUpdatePassword">비밀번호 변경</button>
+        <button type="button" class="action" @click="goMyBoardList">내 게시글 목록</button>
         <button type="button" class="action" @click="goAnalysisList">내 분석 내역</button>
       </div>
     </main>
@@ -33,6 +34,10 @@ const goUpdateProfile = () => {
 
 const goUpdatePassword = () => {
   router.push({ name: 'updatePassword', params: { userid: userId() } }).catch(() => {})
+}
+
+const goMyBoardList = () => {
+  router.push({ name: 'myBoardList' }).catch(() => {})
 }
 
 const goAnalysisList = () => {

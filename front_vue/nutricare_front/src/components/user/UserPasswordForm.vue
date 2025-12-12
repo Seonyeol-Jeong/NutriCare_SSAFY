@@ -1,27 +1,55 @@
 <template>
-  <section class="password-form">
-    <h2 class="sr-only">비밀번호 수정</h2>
-    <form @submit.prevent="onSubmit">
-      <div class="field">
-        <label class="icon-label" for="currentPw">🔒</label>
-        <input id="currentPw" v-model="form.current" type="password" placeholder="기존 비밀번호" required />
+  <div class="container my-5">
+    <div class="card shadow-sm border-light">
+      <div class="card-header bg-white py-3">
+        <h2 class="mb-0 h5">비밀번호 변경</h2>
       </div>
-      <div class="field">
-        <label class="icon-label" for="newPw">🔒</label>
-        <input id="newPw" v-model="form.newPw" type="password" placeholder="새로운 비밀번호" required />
+      <div class="card-body p-4">
+        <form @submit.prevent="onSubmit">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="input-group">
+                <span class="input-group-text label-box" title="기존 비밀번호">
+                  <i class="bi bi-lock"></i>
+                </span>
+                <input id="currentPw" v-model="form.current" type="password" class="form-control" placeholder="기존 비밀번호" required />
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="input-group">
+                <span class="input-group-text label-box" title="새로운 비밀번호">
+                  <i class="bi bi-lock-fill"></i>
+                </span>
+                <input id="newPw" v-model="form.newPw" type="password" class="form-control" placeholder="새로운 비밀번호" required />
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="input-group">
+                <span class="input-group-text label-box" title="새로운 비밀번호 다시 확인">
+                  <i class="bi bi-lock-fill"></i>
+                </span>
+                <input id="confirmPw" v-model="form.confirm" type="password" class="form-control" placeholder="새로운 비밀번호 다시 확인" required />
+              </div>
+            </div>
+          </div>
+          <p class="mt-2 mb-0" :class="{'text-danger': isMismatch, 'text-success': isMatch}" v-show="isMismatch || isMatch">
+            <template v-if="isMismatch">새 비밀번호가 일치하지 않습니다.</template>
+            <template v-else-if="isMatch">새 비밀번호가 일치합니다.</template>
+          </p>
+
+          <hr class="my-4" />
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" @click="goDetail">
+              <i class="bi bi-x-lg"></i> 취소
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg"></i> 변경
+            </button>
+          </div>
+        </form>
       </div>
-      <div class="field">
-        <label class="icon-label" for="confirmPw">🔒</label>
-        <input id="confirmPw" v-model="form.confirm" type="password" placeholder="새로운 비밀번호 다시 확인" required />
-      </div>
-      <p class="hint error" v-show="isMismatch">새 비밀번호가 일치하지 않습니다.</p>
-      <p class="hint ok" v-show="isMatch">새 비밀번호가 일치합니다.</p>
-      <div class="actions">
-        <button type="button" class="secondary" @click="goDetail">취소</button>
-        <button type="submit" class="primary">변경</button>
-      </div>
-    </form>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -60,81 +88,41 @@ function goDetail() {
 </script>
 
 <style scoped>
-.password-form {
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 24px 0 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.container {
+  max-width: 800px;
 }
-
-.field {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  align-items: center;
-  border: 1px solid #b7b7b7;
-  padding: 8px 10px;
-  gap: 8px;
+.card {
+  border-radius: 0.75rem;
 }
-
-.icon-label {
-  text-align: center;
-  font-size: 18px;
-}
-
-input {
-  border: none;
-  outline: none;
-  font-size: 14px;
-  padding: 6px 4px;
-  width: 100%;
-}
-
-.actions {
-  display: flex;
+.label-box {
+  width: 42px;
   justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
+  background-color: #f8f9fa;
+  font-size: 1.1rem;
 }
-
-.primary,
-.secondary {
-  padding: 10px 20px;
-  background: #d8d8d8;
-  border: 1px solid #aeaeae;
-  cursor: pointer;
-  min-width: 120px;
-}
-
-.secondary {
-  background: #efefef;
-}
-
-.hint {
-  margin: 4px 0 10px 44px;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.hint.error {
-  color: #d9534f;
-}
-
-.hint.ok {
-  color: #3c8f3c;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+.input-group {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+}
+.input-group .form-control {
+  border: none;
+}
+.input-group .label-box {
+  border: none;
+}
+.btn {
+  font-weight: 500;
+}
+.btn i {
+  margin-right: 0.35rem;
+  font-size: 0.9em;
+}
+/* Custom styling for hint messages */
+.text-danger {
+  color: var(--bs-danger) !important;
+}
+.text-success {
+  color: var(--bs-success) !important;
 }
 </style>

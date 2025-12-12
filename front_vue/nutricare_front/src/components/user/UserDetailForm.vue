@@ -1,23 +1,41 @@
 <template>
-  <section class="detail-form">
-    <h2 class="sr-only">유저 상세</h2>
-    <form @submit.prevent>
-      <div class="field" v-for="field in fields" :key="field.key">
-        <label class="icon-label" :for="field.key">{{ field.icon }}</label>
-        <input
-          :id="field.key"
-          v-model="form[field.key]"
-          :type="field.type"
-          :placeholder="field.label"
-          :readonly="field.readonly"
-        />
+  <div class="container my-5">
+    <div class="card shadow-sm border-light">
+      <div class="card-header bg-white py-3">
+        <h2 class="mb-0 h5">회원 정보</h2>
       </div>
-      <div class="actions">
-        <button type="button" class="secondary" @click="onEditProfile">회원정보 수정</button>
-        <button type="button" class="secondary" @click="onEditPassword">비밀번호 수정</button>
+      <div class="card-body p-4">
+        <form @submit.prevent>
+          <div class="row g-3">
+            <div class="col-12" v-for="field in fields" :key="field.key">
+              <div class="input-group">
+                <span class="input-group-text label-box" :title="field.label">
+                  <i :class="field.icon"></i>
+                </span>
+                <input
+                  :id="field.key"
+                  v-model="form[field.key]"
+                  :type="field.type"
+                  class="form-control"
+                  :placeholder="field.label"
+                  :readonly="field.readonly"
+                />
+              </div>
+            </div>
+          </div>
+          <hr class="my-4" />
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-primary" @click="onEditProfile">
+              <i class="bi bi-pencil-square"></i> 회원정보 수정
+            </button>
+            <button type="button" class="btn btn-outline-secondary" @click="onEditPassword">
+              <i class="bi bi-shield-lock"></i> 비밀번호 수정
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
-  </section>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -42,14 +60,14 @@ const form = reactive({
 })
 
 const fields = [
-  { key: 'email', label: '이메일', icon: '📧', type: 'email', readonly: true },
-  { key: 'name', label: '이름', icon: '😊', type: 'text', readonly: true },
-  { key: 'birthYear', label: '출생연도', icon: '📅', type: 'text', readonly: true },
-  { key: 'gender', label: '성별', icon: '👤', type: 'text', readonly: true },
-  { key: 'height', label: '키(cm)', icon: '📏', type: 'text', readonly: true },
-  { key: 'weight', label: '몸무게(kg)', icon: '⚖️', type: 'text', readonly: true },
-  { key: 'activity', label: '활동 정도', icon: '🏃', type: 'text', readonly: true },
-  { key: 'goal', label: '목표', icon: '🎯', type: 'text', readonly: true },
+  { key: 'email', label: '이메일', icon: 'bi bi-envelope', type: 'email', readonly: true },
+  { key: 'name', label: '이름', icon: 'bi bi-person', type: 'text', readonly: true },
+  { key: 'birthYear', label: '출생연도', icon: 'bi bi-calendar-event', type: 'text', readonly: true },
+  { key: 'gender', label: '성별', icon: 'bi bi-gender-ambiguous', type: 'text', readonly: true },
+  { key: 'height', label: '키(cm)', icon: 'bi bi-rulers', type: 'text', readonly: true },
+  { key: 'weight', label: '몸무게(kg)', icon: 'bi bi-speedometer2', type: 'text', readonly: true },
+  { key: 'activity', label: '활동 정도', icon: 'bi bi-activity', type: 'text', readonly: true },
+  { key: 'goal', label: '목표', icon: 'bi bi-bullseye', type: 'text', readonly: true },
 ]
 
 function syncFromStore() {
@@ -86,63 +104,42 @@ function onEditPassword() {
 </script>
 
 <style scoped>
-.detail-form {
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 24px 0 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.container {
+  max-width: 800px;
 }
-
-.field {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  align-items: center;
-  border: 1px solid #b7b7b7;
-  padding: 8px 10px;
-  gap: 8px;
+.card {
+  border-radius: 0.75rem;
 }
-
-.icon-label {
-  text-align: center;
-  font-size: 18px;
-}
-
-input {
-  border: none;
-  outline: none;
-  font-size: 14px;
-  padding: 6px 4px;
-  width: 100%;
-  background: transparent;
-}
-
-.actions {
-  display: flex;
+.label-box {
+  width: 42px;
   justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
+  background-color: #f8f9fa;
+  font-size: 1.1rem;
 }
-
-.secondary {
-  padding: 10px 18px;
-  background: #efefef;
-  border: 1px solid #aeaeae;
-  cursor: pointer;
-  min-width: 140px;
+.form-control[readonly] {
+  background-color: #fff;
+  opacity: 1;
+  border-left: 0;
+  padding-left: 1rem;
+  font-weight: 500;
+  color: #212529;
 }
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+.input-group {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+}
+.input-group .form-control {
+  border: none;
+}
+.input-group .label-box {
+  border: none;
+}
+.btn {
+  font-weight: 500;
+}
+.btn i {
+  margin-right: 0.35rem;
+  font-size: 0.9em;
 }
 </style>

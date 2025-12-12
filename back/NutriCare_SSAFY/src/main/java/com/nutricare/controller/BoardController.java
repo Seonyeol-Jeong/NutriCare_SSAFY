@@ -44,7 +44,7 @@ public class BoardController {
 			if (boardList != null && !boardList.isEmpty()) {
 				return new ResponseEntity<List<Board>>(boardList, HttpStatus.OK);
 			}
-			return new ResponseEntity<List<Board>>(boardList, HttpStatus.NOT_FOUND);
+			return new ResponseEntity<List<Board>>(boardList, HttpStatus.NO_CONTENT);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -59,6 +59,22 @@ public class BoardController {
 			Board board = boardService.selectById(id);
 			if (board != null) {
 				return new ResponseEntity<Board>(board, HttpStatus.OK);
+			}
+			return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+	@Operation(summary = "나의 게시글 가져오기", description = "로그인한 사용자의 게시글 목록을 가져옵니다.")
+	@GetMapping("/me")
+	public ResponseEntity<?> getMyBoard(@AuthenticationPrincipal CustomUserDetails userDetails) {
+		try {
+			Long userId = userDetails.getUser().getUserId();
+			List<Board> boardList = boardService.selectListByUserId(userId);
+			if (boardList != null) {
+				return new ResponseEntity<List<Board>>(boardList, HttpStatus.OK);
 			}
 			return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
 		} catch (Exception e) {

@@ -11,6 +11,9 @@ public interface BoardDao {
 	//게시글 ID별 상세 조회
 	Board selectById (long boardId);
 	
+	//게시글 ID별 목록 조회
+	List<Board> selectListByUserId(Long boardId);
+	
 	//게시글 등록
 	int insert(Board board);
 	

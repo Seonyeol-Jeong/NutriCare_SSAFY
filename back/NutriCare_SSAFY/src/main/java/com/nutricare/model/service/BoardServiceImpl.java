@@ -29,6 +29,13 @@ public class BoardServiceImpl implements BoardService {
 		return boardDao.selectById(id);
 	}
 	
+	@Transactional
+	@Override
+	public List<Board> selectListByUserId(Long userId) {
+		return boardDao.selectListByUserId(userId);
+	}
+
+	
 	//파일 등록을 위한 트랜잭셔널
 	@Transactional
 	@Override
@@ -62,6 +69,7 @@ public class BoardServiceImpl implements BoardService {
 	public int insertBoardImages(Board board) {
 		return boardDao.insertBoardImages(board);
 	}
+
 
 
 

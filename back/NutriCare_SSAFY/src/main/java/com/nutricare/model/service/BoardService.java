@@ -11,6 +11,9 @@ public interface BoardService {
 	//게시글 ID로 상세 조회
 	Board selectById (long id);
 	
+	//유저 ID로 게시글 목록 조회
+	List<Board> selectListByUserId(Long userId);
+	
 	//게시글 등록
 	int insert(Board board);
 	

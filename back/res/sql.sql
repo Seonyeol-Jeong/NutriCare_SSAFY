@@ -1,4 +1,4 @@
--- 25.12.08. 15:00 수정
+-- 25.12.12 수정
 -- 데이터베이스 생성 및 선택
 DROP DATABASE IF EXISTS nutricare_db;
 CREATE DATABASE nutricare_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -130,6 +130,7 @@ CREATE TABLE `diet_result` (
 CREATE TABLE `board` (
   `board_id`   BIGINT       NOT NULL AUTO_INCREMENT,
   `user_id`    BIGINT       NOT NULL,
+  `user_name`	VARCHAR(255) NOT NULL,
   `title`      VARCHAR(200) NOT NULL,
   `content`    TEXT         NOT NULL,
   `category`   VARCHAR(50)  NULL,
@@ -154,6 +155,7 @@ CREATE TABLE `comment` (
   `comment_id` BIGINT       NOT NULL AUTO_INCREMENT,
   `board_id`   BIGINT       NOT NULL,
   `user_id`    BIGINT       NOT NULL,
+  `user_name`	VARCHAR(255) NOT NULL,
   `content`    TEXT         NOT NULL,
   `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

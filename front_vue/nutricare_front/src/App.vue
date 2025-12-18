@@ -1,8 +1,11 @@
 <template>
   <RouterView />
+  <VoiceWidget/>
 </template>
 
 <script setup>
+import VoiceWidget from './components/voice/VoiceWidget.vue';
+
 </script>
 
 <style>

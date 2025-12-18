@@ -70,7 +70,12 @@ instance.interceptors.response.use(
       
       // [403 Forbidden] 권한 없음 (ADMIN 전용 페이지 접근 등)
       if (status === 403) {
-        alert('접근 권한이 없습니다.');
+        // `/users/me` 요청에서 403 발생 시 (주로 토큰 문제),
+        // 경고창 없이 세션 만료 처리를 위해 에러를 그대로 반환합니다.
+        // fetchMe의 catch 블록에서 로그아웃을 처리하게 됩니다.
+        if (error.config.url !== '/users/me') {
+          alert('접근 권한이 없습니다.');
+        }
       }
     }
 

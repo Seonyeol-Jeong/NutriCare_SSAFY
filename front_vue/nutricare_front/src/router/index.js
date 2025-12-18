@@ -19,6 +19,7 @@ import UserProfileView from '@/views/user/UserProfileView.vue'
 import UserPasswordView from '@/views/user/UserPasswordView.vue'
 import MyBoardListView from '@/views/board/MyBoardListView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,6 +70,7 @@ const router = createRouter({
     },
     {
       path: '/analysis',
+      name: 'analysis',
       component: AnalysisView,
       children: [
         {
@@ -144,5 +146,36 @@ const router = createRouter({
     }
   ],
 })
+
+// 라우팅 전역 가드
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  const isLoggedIn = userStore.isLoggedIn
+
+  // 로그인이 필요 없는 페이지 목록
+  const publicPages = [
+    'Home', 'pageDescribe', 'engineeringDescribe', 
+    'board', 'boardList', 'boardDetail', 
+    'userLogin', 'login', 
+    'userJoin', 'signup'
+  ]
+
+  const authRequired = !publicPages.includes(to.name)
+
+  // 1. 로그인이 필요한 페이지에 비로그인 상태로 접근 시
+  if (authRequired && !isLoggedIn) {
+    alert('로그인이 필요합니다. 로그인 페이지로 이동합니다.')
+    return next({ name: 'userLogin' })
+  }
+
+  // 2. 로그인 상태에서 로그인/회원가입 페이지 접근 시
+  if (isLoggedIn && (to.name === 'userLogin' || to.name === 'userJoin')) {
+    return next({ name: 'PageDescribe' })
+  }
+
+  // 그 외의 경우는 정상 진행
+  next()
+})
+
 
 export default router

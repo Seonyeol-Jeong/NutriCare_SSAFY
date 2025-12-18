@@ -60,9 +60,13 @@ export const useUserStore = defineStore('user', {
 
           console.log('로그인 성공:', this.userId)
           return true
+        } else {
+          // 200 OK 응답이지만 토큰이 없는 경우 (논리적 로그인 실패)
+          throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.')
         }
       } catch (error) {
         console.error('로그인 요청 실패:', error)
+        // axios 에러 또는 위에서 던진 에러를 다시 던져서 컴포넌트에서 처리
         throw error
       }
     },

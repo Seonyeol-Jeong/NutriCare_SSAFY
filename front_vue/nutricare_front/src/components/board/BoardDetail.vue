@@ -113,11 +113,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useBoardStore } from '@/stores/board';
 import { useUserStore } from '@/stores/user';
 import { useCommentStore } from '@/stores/comment';
+import { useVoiceStore } from '@/stores/voice'; // 👈 Import voice store
 import { storeToRefs } from 'pinia';
 
 const router = useRouter();
@@ -125,6 +126,7 @@ const route = useRoute();
 const boardStore = useBoardStore();
 const userStore = useUserStore();
 const commentStore = useCommentStore();
+const voiceStore = useVoiceStore(); // 👈 Get voice store instance
 
 const { board, isLoading, hasError } = storeToRefs(boardStore);
 const { comments, isLoading: isCommentLoading } = storeToRefs(commentStore);
@@ -135,6 +137,22 @@ const boardId = computed(() => route.params.id);
 const newCommentContent = ref('');
 const editingCommentId = ref(null);
 const editingCommentContent = ref('');
+
+// --- TTS Feature ---
+watch(board, (newBoard) => {
+  // speak=true 쿼리가 있을 때만 음성 안내를 실행합니다.
+  if (newBoard && newBoard.title && newBoard.content && route.query.speak === 'true') {
+    // v-html로 렌더링되는 content에서 HTML 태그를 제거
+    const contentText = newBoard.content.replace(/<[^>]*>?/gm, '');
+    const textToRead = `제목: ${newBoard.title}. 내용: ${contentText}`;
+    voiceStore.speak(textToRead);
+  }
+});
+
+onUnmounted(() => {
+  voiceStore.cancelSpeak(); // 페이지를 떠날 때 음성 출력 중지
+});
+// -----------------
 
 watch(boardId, (newId) => {
   if (newId) {

@@ -31,9 +31,10 @@ public class JwtUtil {
     }
 
     // 1) 토큰 생성
-    public String generateToken(Long userId, String role) {
+    public String generateToken(Long userId, String email, String role) {
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
+                .claim("email", email)
                 .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
@@ -46,14 +47,20 @@ public class JwtUtil {
         Claims claims = getClaims(token);
         return Long.valueOf(claims.getSubject());
     }
+    
+    // 3) email 추출
+    public String getEmailFromToken(String token) {
+    	Claims claims = getClaims(token);
+    	return (String) claims.get("email");
+    }
 
-    // 3) role 추출
+    // 4) role 추출
     public String getRoleFromToken(String token) {
         Claims claims = getClaims(token);
         return (String) claims.get("role");
     }
 
-    // 4) Claims 추출
+    // 5) Claims 추출
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)

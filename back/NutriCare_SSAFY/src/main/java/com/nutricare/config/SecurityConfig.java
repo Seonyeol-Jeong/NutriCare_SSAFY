@@ -40,7 +40,8 @@ public class SecurityConfig {
 		.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/api/users/login", "/api/users").permitAll()
                 .requestMatchers("/images/**", "/css/**", "/js/**", "/favicon.ico").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/voice/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/boards/**").permitAll()
                 // [관리자 전용] /admin 하위 모든 경로는 ADMIN 권한 필요
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

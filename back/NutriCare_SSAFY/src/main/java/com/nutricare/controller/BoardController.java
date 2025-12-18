@@ -94,7 +94,7 @@ public class BoardController {
 
 			int result = boardService.insert(board);
 			if (result > 0) {
-				return new ResponseEntity<Integer>(result, HttpStatus.CREATED);
+				return new ResponseEntity<Board>(board, HttpStatus.CREATED);
 			}
 			return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {

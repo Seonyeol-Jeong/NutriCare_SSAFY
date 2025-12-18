@@ -110,15 +110,12 @@ export const useBoardStore = defineStore('board', {
 
       try {
         await axios.post('/board-images', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
       } catch (error) {
         console.error('Error uploading board images:', error);
         this.error = '이미지 업로드에 실패했습니다.';
-        // 이미지는 실패해도 일단 글은 작성되었을 수 있으므로 에러를 throw할지 결정 필요
-        // throw error; 
+        throw error; 
       } finally {
         this.loading = false;
       }

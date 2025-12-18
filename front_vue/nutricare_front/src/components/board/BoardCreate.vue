@@ -107,6 +107,7 @@ async function onSubmit() {
     return;
   }
 
+  let newBoardId;
   try {
     // 1. 게시글 텍스트 내용 생성
     const payload = {
@@ -115,24 +116,32 @@ async function onSubmit() {
       category: form.category,
       userName: userInfo.value?.name, // Add userName to the payload
     };
-    const newBoard = await boardStore.createBoard(payload);
+    newBoardId = await boardStore.createBoard(payload);
+  } catch (error) {
+    alert('게시글 생성에 실패했습니다. 다시 시도해주세요.');
+    console.error('게시글 생성 실패:', error);
+    return; // 게시글 생성 실패 시 중단
+  }
 
-    // 2. 이미지가 있으면, 생성된 게시글 ID를 이용해 이미지 업로드
-    if (form.images.length > 0 && newBoard && newBoard.boardId) {
+  // 2. 이미지가 있으면, 생성된 게시글 ID를 이용해 이미지 업로드
+  if (form.images.length > 0 && newBoardId) {
+    try {
       await boardStore.uploadBoardImages({
-        boardId: newBoard.boardId,
+        boardId: newBoardId.boardId, // 백엔드 응답에 따라 boardId 필드 사용
         files: form.images,
       });
+    } catch (error) {
+      alert(
+        '게시글은 등록되었지만 이미지 업로드에 실패했습니다. 게시글 수정에서 다시 시도해주세요.'
+      );
+      console.error('이미지 업로드 실패:', error);
+      // 이미지가 실패해도 목록으로 이동은 함
     }
-
-    // 3. 모든 과정 완료 후 목록으로 이동
-    await boardStore.fetchBoards(); // 새 글 포함된 목록을 다시 불러옴
-    goList();
-  } catch (error) {
-    // createBoard 또는 uploadBoardImages에서 발생한 에러 처리
-    alert('게시글 등록에 실패했습니다. 다시 시도해주세요.');
-    console.error(error); // 디버깅을 위해 콘솔에 에러 출력
   }
+
+  // 3. 모든 과정 완료 후 목록으로 이동
+  await boardStore.fetchBoards(); // 새 글 포함된 목록을 다시 불러옴
+  goList();
 }
 </script>
 

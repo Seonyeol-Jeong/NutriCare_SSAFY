@@ -59,15 +59,16 @@ public class UserRestController {
                         + "발급된 JWT는 Authorization 헤더에 Bearer {token} 형태로 포함하여 요청해야 합니다."
     )
     @PostMapping("/login")
-    public LoginResponse login(@RequestParam String email,
+    public ResponseEntity<?> login(@RequestParam String email,
                                @RequestParam String password) {
 
         User user = userService.login(email, password);
-        if (user == null) return null;
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 또는 비밀번호가 일치하지 않습니다.");
 
-        String token = jwtUtil.generateToken(user.getUserId(), user.getRole());
+        String token = jwtUtil.generateToken(user.getUserId(), user.getEmail(), user.getRole());
+        LoginResponse response = new LoginResponse(token, user.getUserId());
 
-        return new LoginResponse(token, user.getUserId());
+        return ResponseEntity.ok(response);
     }
 
  // 3) 내 정보 조회 

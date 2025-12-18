@@ -37,7 +37,7 @@
           
           <div class="images-preview mb-4 row g-2" v-if="board.images && board.images.length">
             <div class="col-md-4 col-sm-6 col-12" v-for="img in board.images" :key="img.imageId">
-              <img :src="img.imageUrl" class="img-fluid rounded shadow-sm" alt="게시글 이미지" @error="handleImageError" />
+              <img :src="img.imageUrl" class="img-fluid rounded shadow-sm" :alt="getFileNameFromUrl(img.imageUrl)" @error="handleImageError" />
             </div>
           </div>
 
@@ -140,6 +140,13 @@ const editingCommentContent = ref('');
 const handleImageError = (e) => {
   e.target.src = '/assets/Logo.png'; // assets에 있는 기본 이미지 경로
 };
+
+const getFileNameFromUrl = (url) => {
+  if (!url) return '이미지';
+  const parts = url.split('/');
+  return parts[parts.length - 1];
+};
+
 
 // --- TTS Feature ---
 watch(board, (newBoard) => {

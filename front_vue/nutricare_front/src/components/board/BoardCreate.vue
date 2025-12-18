@@ -127,7 +127,7 @@ async function onSubmit() {
   if (form.images.length > 0 && newBoardId) {
     try {
       await boardStore.uploadBoardImages({
-        boardId: newBoardId,
+        boardId: newBoardId.boardId, // 백엔드 응답에 따라 boardId 필드 사용
         files: form.images,
       });
     } catch (error) {

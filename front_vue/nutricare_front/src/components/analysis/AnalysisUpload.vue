@@ -1,68 +1,76 @@
 <template>
-  <div class="upload-container ">
-    <h2 class="title">AI 피부 분석</h2>
-    <p class="subtitle">얼굴 사진을 업로드하여 피부 상태를 분석하고 맞춤 식단을 추천받아 보세요.</p>
-    
-    <!-- 파일 업로드 영역 -->
-    <div 
-      class="drop-zone"
-      :class="{ 'is-dragover': isDragover }"
-      @click="onPickFile"
-      @dragover.prevent="isDragover = true"
-      @dragleave.prevent="isDragover = false"
-      @drop.prevent="handleDrop"
-    >
-      <!-- 파일이 없을 때 (초기 상태) -->
-      <div v-if="!previewUrl" class="initial-state">
-        <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-        <p class="main-hint">사진을 드래그하거나 여기를 클릭하세요</p>
-        <p class="sub-hint">JPG, PNG, WEBP 등 이미지 파일</p>
-      </div>
-
-      <!-- 파일이 있을 때 (미리보기 상태) -->
-      <div v-else class="preview-area">
-        <img :src="previewUrl" alt="업로드 미리보기" class="preview-image" />
-        <div class="file-info">
-          <p>{{ selectedFile.name }}</p>
-          <small>{{ (selectedFile.size / 1024).toFixed(1) }} KB</small>
+  <div class="upload-page-container">
+    <div class="upload-container">
+      <h2 class="title">AI 피부 분석</h2>
+      <p class="subtitle">얼굴 사진을 업로드하여 피부 상태를 분석하고 맞춤 식단을 추천받아 보세요.</p>
+      
+      <!-- 파일 업로드 영역 -->
+      <div 
+        class="drop-zone"
+        :class="{ 'is-dragover': isDragover }"
+        @click="onPickFile"
+        @dragover.prevent="isDragover = true"
+        @dragleave.prevent="isDragover = false"
+        @drop.prevent="handleDrop"
+      >
+        <!-- 파일이 없을 때 (초기 상태) -->
+        <div v-if="!previewUrl" class="initial-state">
+          <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+          <p class="main-hint">사진을 드래그하거나 여기를 클릭하세요</p>
+          <p class="sub-hint">JPG, PNG, WEBP 등 이미지 파일</p>
         </div>
-        <button @click.stop="removeFile" class="remove-button" aria-label="파일 삭제">×</button>
+
+        <!-- 파일이 있을 때 (미리보기 상태) -->
+        <div v-else class="preview-area">
+          <img :src="previewUrl" alt="업로드 미리보기" class="preview-image" />
+          <div class="file-info">
+            <p>{{ selectedFile.name }}</p>
+            <small>{{ (selectedFile.size / 1024).toFixed(1) }} KB</small>
+          </div>
+          <button @click.stop="removeFile" class="remove-button" aria-label="파일 삭제">×</button>
+        </div>
+
+        <input ref="fileInput" type="file" accept="image/*" class="hidden-input" @change="onFileChange" />
       </div>
 
-      <input ref="fileInput" type="file" accept="image/*" class="hidden-input" @change="onFileChange" />
+      <!-- 분석하기 버튼 -->
+      <div class="actions">
+        <button class="primary-button" type="button" @click="analyze" :disabled="!selectedFile || isLoading">
+          <span v-if="isLoading" class="spinner"></span>
+          {{ isLoading ? '분석 중...' : '분석하기' }}
+        </button>
+      </div>
     </div>
 
-    <!-- 건강 정보 폼 -->
-    <div class="health-form">
-       <!-- 폼 내용 생략 (기존과 동일) -->
-    </div>
-
-    <!-- 분석하기 버튼 -->
-    <div class="actions">
-      <button class="primary-button" type="button" @click="analyze" :disabled="!selectedFile || isLoading">
-        <span v-if="isLoading" class="spinner"></span>
-        {{ isLoading ? '분석 중...' : '분석하기' }}
-      </button>
+    <!-- 회원정보 입력 안내 및 폼 (분석하기 버튼 아래에 노출) -->
+    <div v-if="showProfileForm" class="profile-form-section" ref="profileFormRef">
+      <div class="info-alert">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>회원정보를 입력해서 더 정확한 분석을 받으세요.</span>
+      </div>
+      <UserProfileForm />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAnalysisStore } from '@/stores/analysis'
-// useUserStore와 storeToRefs는 health-form을 위해 필요하다면 유지
-// import { storeToRefs } from 'pinia'
-// import { useUserStore } from '@/stores/user'
+import { useUserStore } from '@/stores/user'
+import UserProfileForm from '@/components/user/UserProfileForm.vue'
 
 const router = useRouter()
 const analysisStore = useAnalysisStore()
+const userStore = useUserStore()
 
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const previewUrl = ref('')
 const isDragover = ref(false)
 const isLoading = ref(false)
+const showProfileForm = ref(false)
+const profileFormRef = ref(null)
 
 function onPickFile() {
   fileInput.value?.click()
@@ -91,7 +99,6 @@ function handleDrop(event) {
 function removeFile() {
   selectedFile.value = null
   previewUrl.value = ''
-  // 파일 인풋의 값도 초기화하여 같은 파일을 다시 선택할 수 있게 함
   if (fileInput.value) {
     fileInput.value.value = ''
   }
@@ -102,6 +109,19 @@ async function analyze() {
     alert('이미지를 먼저 선택해주세요.')
     return
   }
+
+  // 회원 정보 확인
+  await userStore.fetchMe()
+  const hasHealthProfile = userStore.healthProfile && Object.keys(userStore.healthProfile).length > 0
+  
+  if (!hasHealthProfile) {
+    showProfileForm.value = true
+    // 폼이 나타난 후 해당 위치로 스크롤
+    await nextTick()
+    profileFormRef.value?.scrollIntoView({ behavior: 'smooth' })
+    return
+  }
+
   isLoading.value = true
   try {
     const photoResp = await analysisStore.uploadPhoto(selectedFile.value)
@@ -121,10 +141,18 @@ async function analyze() {
 </script>
 
 <style scoped>
+.upload-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 50px;
+}
+
 .upload-container {
   width: 100%;
   max-width: 500px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -290,6 +318,32 @@ async function analyze() {
   to { transform: rotate(360deg); }
 }
 
-/* 건강 정보 폼 스타일은 생략. 필요 시 이전 스타일을 참고하여 추가 */
-.health-form { display: none; } /* 임시로 숨김 */
+/* Profile Form Section */
+.profile-form-section {
+  width: 100%;
+  max-width: 800px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.info-alert {
+  background-color: #e8f0fe;
+  border-left: 5px solid #4285f4;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #1967d2;
+  font-weight: 500;
+}
+
+.info-alert i {
+  font-size: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>

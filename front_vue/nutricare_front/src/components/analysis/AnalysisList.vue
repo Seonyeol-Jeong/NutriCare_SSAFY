@@ -1,41 +1,61 @@
 <template>
   <section class="analysis-list">
-    <table>
-      <thead>
-        <tr>
-          <th>순번</th>
-          <th>분석 날짜</th>
-          <th>사진이름</th>
-          <th>분석명</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(item, index) in pagedItems"
-          :key="item.id"
-          @click="goDetail(item.id)"
-        >
-          <td>{{ (page - 1) * pageSize + index + 1 }}</td>
-          <td class="with-icon">📅 {{ item.date }}</td>
-          <td>{{ item.photoName }}</td>
-          <td>{{ item.title }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <h2>분석 기록</h2>
 
-    <div class="pagination">
-      <button type="button" :disabled="page===1" @click="page--">‹</button>
-      <button
-        v-for="p in totalPages"
-        :key="p"
-        :class="{ active: p === page }"
-        type="button"
-        @click="page = p"
-      >
-        {{ p }}
-      </button>
-      <button type="button" :disabled="page===totalPages" @click="page++">›</button>
+    <div v-if="isLoading" class="loading-spinner">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
     </div>
+
+    <div v-else-if="items.length === 0" class="alert alert-light text-center" role="alert">
+      분석 기록이 없습니다.
+    </div>
+
+    <template v-else>
+      <div class="table-wrap">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">분석 날짜</th>
+              <th scope="col">사진이름</th>
+              <th scope="col">분석명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(item, index) in pagedItems"
+              :key="item.id"
+              @click="goDetail(item.id)"
+            >
+              <td>{{ (page - 1) * pageSize + index + 1 }}</td>
+              <td>{{ item.date }}</td>
+              <td>{{ item.photoName }}</td>
+              <td>{{ item.title }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-controls">
+        <button class="btn btn-sm btn-outline-secondary" :disabled="page === 1" @click="page--">
+          ‹
+        </button>
+        <span v-for="p in totalPages" :key="p">
+          <button
+            class="btn btn-sm"
+            :class="{ 'btn-primary': p === page, 'btn-outline-secondary': p !== page }"
+            @click="page = p"
+          >
+            {{ p }}
+          </button>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary" :disabled="page === totalPages" @click="page++">
+          ›
+        </button>
+      </div>
+    </template>
   </section>
 </template>
 
@@ -47,8 +67,15 @@ import { useAnalysisStore } from '@/stores/analysis'
 const router = useRouter()
 const store = useAnalysisStore()
 
-onMounted(() => {
-  store.fetchUserPhotos()
+const isLoading = ref(false)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await store.fetchUserPhotos()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 function extractPhotoName(url) {
@@ -70,8 +97,8 @@ const items = computed(() =>
 )
 
 const page = ref(1)
-const pageSize = 7
-const totalPages = computed(() => Math.ceil(items.value.length / pageSize))
+const pageSize = 10
+const totalPages = computed(() => Math.ceil(items.value.length / pageSize) || 1)
 const pagedItems = computed(() => {
   const start = (page.value - 1) * pageSize
   return items.value.slice(start, start + pageSize)
@@ -85,60 +112,42 @@ function goDetail(id) {
 <style scoped>
 .analysis-list {
   width: 100%;
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 32px 16px 48px;
-  background: #f8f5eb;
-  box-sizing: border-box;
+  padding: 40px 16px;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
+h2 {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.table-wrap {
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
   background: #fff;
 }
 
-th, td {
-  border: 1px solid #9f9f9f;
-  padding: 12px 14px;
-  text-align: left;
+.table {
+  margin-bottom: 0;
 }
 
-tbody tr {
+.table tbody tr {
   cursor: pointer;
 }
 
-tbody tr:hover {
-  background: #f1f1f1;
-}
-
-.with-icon {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pagination {
-  margin-top: 16px;
+.pagination-controls {
+  margin-top: 1.5rem;
   display: flex;
   justify-content: center;
-  gap: 6px;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.pagination button {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 6px 8px;
-}
-
-.pagination button.active {
-  font-weight: 700;
-  text-decoration: underline;
-}
-
-.pagination button:disabled {
-  color: #b0b0b0;
-  cursor: not-allowed;
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
 }
 </style>

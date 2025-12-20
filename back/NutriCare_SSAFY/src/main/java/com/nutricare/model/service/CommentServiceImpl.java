@@ -2,6 +2,7 @@ package com.nutricare.model.service;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,11 +35,13 @@ public class CommentServiceImpl implements CommentService{
 	}
 
 	@Override
+	@PreAuthorize("@boardSecurity.isCommentOwner(#comment.commentId, principal)")
 	public int update(Comment comment) {
 		return commentDao.update(comment);
 	}
 
 	@Override
+	@PreAuthorize("@boardSecurity.isCommentOwner(#commentId, principal)")
 	public int delete(long commentId) {
 		return commentDao.delete(commentId);
 	}

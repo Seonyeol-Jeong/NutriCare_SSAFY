@@ -58,7 +58,8 @@ instance.interceptors.response.use(
       const status = error.response.status;
 
       // [401 Unauthorized] 토큰 만료 또는 인증 실패
-      if (status === 401) {
+      // 단, 로그인 시도 중 발생한 401은 로그아웃 처리(홈 리다이렉트)를 하지 않음
+      if (status === 401 && !error.config.url.endsWith('/users/login')) {
         console.warn('세션이 만료되었습니다. 다시 로그인해주세요.');
         
         // 1. 스토어의 로그아웃 액션 실행 (상태 초기화)

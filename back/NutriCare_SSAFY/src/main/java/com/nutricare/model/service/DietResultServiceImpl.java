@@ -2,6 +2,7 @@ package com.nutricare.model.service;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,25 +29,29 @@ public class DietResultServiceImpl implements DietResultService {
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isRecOwner(#recId, principal)")
     public List<DietResult> getDietResultsByRecId(Long recId) {
         return dietResultDao.selectByRecId(recId);
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isDietResultOwner(#resultId, principal)")
     public DietResult getDietResultById(Long resultId) {
         return dietResultDao.selectByResultId(resultId);
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isDietResultOwner(#dietResult.resultId, principal)")
     @Transactional
     public boolean updateDietResult(DietResult dietResult) {
         return dietResultDao.updateDietResult(dietResult) > 0;
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isDietResultOwner(#resultId, principal)")
     @Transactional
-    public boolean deleteDietResult(Long mealId) {
-        return dietResultDao.deleteDietResult(mealId) > 0;
+    public boolean deleteDietResult(Long resultId) {
+        return dietResultDao.deleteDietResult(resultId) > 0;
     }
 
     /**
@@ -99,6 +104,7 @@ public class DietResultServiceImpl implements DietResultService {
     }
     
     @Override
+    @PreAuthorize("@dietSecurity.isRecOwner(#recId, principal)")
     @Transactional
     public boolean deleteDietResultsByRecId(Long recId) {
         return dietResultDao.deleteByRecId(recId) > 0;

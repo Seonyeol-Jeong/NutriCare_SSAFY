@@ -99,8 +99,6 @@ export const useUserStore = defineStore('user', {
 
     async updateProfile(payload) {
       try {
-        // 백엔드에서 프로필 갱신을 담당하는 엔드포인트로 교체하세요.
-        // 예: await axios.put('/users/me', payload)
         const response = await axios.patch('/users/me/info', payload)
 
         // 응답에 최신 사용자/프로필 정보가 오면 반영

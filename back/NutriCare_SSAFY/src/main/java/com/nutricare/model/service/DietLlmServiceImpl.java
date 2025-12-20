@@ -36,7 +36,7 @@ public class DietLlmServiceImpl implements DietLlmService {
      * - RestTemplate 초기화
      * - ObjectMapper 구성 + LocalDateTime 직렬화를 위한 JavaTimeModule 등록
      */
-    public DietLlmServiceImpl(@Value("${ai.diet.url:http://localhost:8000/diet/generate}") String dietLlmUrl) {
+    public DietLlmServiceImpl(@Value("${ai.diet.url}") String dietLlmUrl) {
         this.restTemplate = new RestTemplate();
 
         this.appMapper = new ObjectMapper();

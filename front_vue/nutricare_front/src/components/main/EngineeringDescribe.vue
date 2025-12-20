@@ -1,7 +1,9 @@
 <template>
   <section class="engineering-describe container">
     <div class="text-hero">
-      <div class="hero-mark">NutriCare는...</div>
+      <div class="hero-mark">
+        <img :src="logoImg" alt="NutriCare Logo" class="hero-logo" />
+      </div>
       <div class="hero-copy">
         <h2 class="headline">핵심 기술로 AI·분석을 결합한 맞춤 헬스케어</h2>
         <p class="body">
@@ -18,7 +20,9 @@
         :key="feature.id"
         class="feature-card"
       >
-        <div class="feature-visual">{{ feature.title }}</div>
+        <div class="feature-visual">
+          <img :src="feature.image" :alt="feature.name" class="feature-img" />
+        </div>
         <div class="feature-body">
           <p class="feature-name">{{ feature.name }}</p>
           <p class="feature-desc">{{ feature.desc }}</p>
@@ -30,6 +34,9 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import logoImg from '@/assets/Logo.png'
+import joonhoImg from '@/assets/jonnho.png'
+import seonyeolImg from '@/assets/seonyeol.png'
 
 const router = useRouter()
 
@@ -38,12 +45,14 @@ const features = [
     id: 1,
     title: '장준호',
     name: '장준호',
+    image: joonhoImg,
     desc: '주요 기술 소개',
   },
   {
     id: 2,
     title: '정선열',
     name: '정선열',
+    image: seonyeolImg,
     desc: '주요 기술 소개',
   },
 ]
@@ -78,15 +87,18 @@ function goToTech() {
 .hero-mark {
   width: 200px;
   height: 200px;
-  border-radius: 50%;
-  background: #6b55c7;
-  color: #fff;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  font-weight: 700;
-  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+.hero-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .hero-copy {
@@ -142,14 +154,22 @@ function goToTech() {
   grid-template-columns: 1fr;
   grid-template-rows: 200px auto;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
 }
 
 .feature-visual {
-  background: #c8c8c8;
-  display: grid;
-  place-items: center;
-  color: #3b3b3b;
-  font-weight: 600;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.feature-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .feature-body {

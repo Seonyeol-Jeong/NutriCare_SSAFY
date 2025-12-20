@@ -1,5 +1,6 @@
 package com.nutricare.model.service;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class DietRecommendationServiceImpl implements DietRecommendationService 
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isPhotoOwner(#photoId, principal)")
     @Transactional
     public DietRecommendation createByPhotoId(Long photoId, String memo) {
         // photo -> analysis_result(최신) 조회
@@ -42,6 +44,7 @@ public class DietRecommendationServiceImpl implements DietRecommendationService 
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isAnalysisOwner(#analysisId, principal)")
     @Transactional
     public DietRecommendation createByAnalysisId(Long analysisId, String memo) {
         // analysis_id 직접 지정

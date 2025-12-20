@@ -66,16 +66,6 @@ public class CommentController {
 	public ResponseEntity<?> update(@PathVariable("commentId") Long commentId, @RequestBody Comment comment,
 			@AuthenticationPrincipal CustomUserDetails userDetails) { // ★ 유저 정보
 		try {
-			// ★ 1. 댓글 존재 여부 및 작성자 확인
-			Comment origin = commentService.selectById(commentId);
-			if (origin == null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("comment not found");
-			}
-
-			// ★ 2. 본인 확인
-			if (!origin.getUserId().equals(userDetails.getUser().getUserId())) {
-				return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not the author");
-			}
 
 			comment.setCommentId(commentId);
 			int result = commentService.update(comment);

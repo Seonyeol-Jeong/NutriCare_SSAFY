@@ -1,5 +1,6 @@
 package com.nutricare.model.service;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ public class HealthProfileServiceImpl implements HealthProfileService {
     }
 
     @Override
+    @PreAuthorize("@userSecurity.isSelf(#userId, principal)")
     public HealthProfile getHealthProfile(Long userId) {
         return healthProfileDao.selectByUserId(userId);
     }

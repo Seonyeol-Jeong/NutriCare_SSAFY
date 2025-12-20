@@ -2,6 +2,7 @@ package com.nutricare.model.service;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,13 +52,15 @@ public class BoardServiceImpl implements BoardService {
 	}
 
 	@Override
+	@PreAuthorize("@boardSecurity.isBoardOwner(#board.boardId, principal)")
 	public int update(Board board) {
 		return boardDao.update(board);
 	}
 
 	@Override
-	public int delete(long id) {
-		return boardDao.delete(id);
+	@PreAuthorize("@boardSecurity.isBoardOwner(#boardId, principal)")
+	public int delete(long boardId) {
+		return boardDao.delete(boardId);
 	}
 
 	@Override
@@ -66,11 +69,8 @@ public class BoardServiceImpl implements BoardService {
 	}
 
 	@Override
+	@PreAuthorize("@boardSecurity.isBoardOwner(#board.boardId, principal)")
 	public int insertBoardImages(Board board) {
 		return boardDao.insertBoardImages(board);
 	}
-
-
-
-
 }

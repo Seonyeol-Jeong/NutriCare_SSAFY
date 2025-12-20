@@ -21,10 +21,10 @@ public interface BoardService {
 	int update(Board board);
 	
 	//id로 게시글 삭제
-	int delete(long id);
+	int delete(long boardId);
 	
 	//조회수 증가
-	int updateViewCnt(long id);
+	int updateViewCnt(long boardId);
 	
 	//파일 등록
 	public int insertBoardImages(Board board);

@@ -2,6 +2,7 @@ package com.nutricare.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,6 +73,7 @@ public class UserRestController {
     }
 
  // 3) 내 정보 조회 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(summary = "내 정보 조회 (통합)", description = "회원 기본 정보와 건강 프로필을 함께 반환합니다.")
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -87,7 +89,8 @@ public class UserRestController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
+    
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(summary = "내 정보 통합 수정", description = "User 정보와 HealthProfile 정보를 한 번에 수정합니다.")
     @PatchMapping("/me/info")
     public ResponseEntity<?> updateMyInfo(@RequestBody UserDetailResponse requestData, 
@@ -118,6 +121,7 @@ public class UserRestController {
     }
     
  // 4-2) 비밀번호 변경
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "비밀번호 변경", description = "현재 비밀번호 확인 후 새 비밀번호로 변경합니다.")
     @PatchMapping("/me/password")
     public ResponseEntity<?> updatePassword(@RequestBody PasswordUpdateRequest request,

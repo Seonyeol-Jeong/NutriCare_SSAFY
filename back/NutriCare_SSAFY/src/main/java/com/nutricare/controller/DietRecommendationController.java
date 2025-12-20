@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,12 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.nutricare.config.security.CustomUserDetails;
-import com.nutricare.model.dto.AnalysisResult;
 import com.nutricare.model.dto.DietContext;
 import com.nutricare.model.dto.DietRecommendation;
 import com.nutricare.model.dto.DietResult;
 import com.nutricare.model.dto.HealthProfile;
-import com.nutricare.model.dto.Photo;
 import com.nutricare.model.service.AnalysisResultService;
 import com.nutricare.model.service.CalorieCalculator;
 import com.nutricare.model.service.DietContextService;
@@ -57,8 +56,6 @@ public class DietRecommendationController {
     private final DietRuleEngine dietRuleEngine;
     private final DietResultService dietResultService;
     private final DietRecommendationService dietRecommendationService;
-    private final PhotoService photoService;
-    private final AnalysisResultService analysisResultService;
     private final HealthProfileService healthProfileService;
 
     public DietRecommendationController(DietContextService dietContextService,
@@ -74,8 +71,6 @@ public class DietRecommendationController {
         this.dietRuleEngine = dietRuleEngine;
         this.dietResultService = dietResultService;
         this.dietRecommendationService = dietRecommendationService;
-        this.photoService = photoService;
-        this.analysisResultService = analysisResultService;
         this.healthProfileService = healthProfileService;
     }
 
@@ -84,31 +79,18 @@ public class DietRecommendationController {
     // ===========================
     @Operation(summary = "식단 추천 rec 생성", description = "photoId 또는 analysisId를 기반으로 diet_recommendation을 생성합니다.")
     @PostMapping("/create")
-    public ResponseEntity<?> createRec(@RequestBody CreateRequest body,
-                                       @AuthenticationPrincipal CustomUserDetails userDetails) {
-        try {
-            if ((body.getPhotoId() == null) && (body.getAnalysisId() == null)) {
-                return ResponseEntity.badRequest().body("photoId 또는 analysisId 중 하나는 필요합니다.");
-            }
-
-            Long ownerUserId = resolveOwnerUserId(body);
-            checkAuthorityByUserId(ownerUserId, userDetails);
-
-            DietRecommendation rec;
-            if (body.getPhotoId() != null) {
-                rec = dietRecommendationService.createByPhotoId(body.getPhotoId(), body.getMemo());
-            } else {
-                rec = dietRecommendationService.createByAnalysisId(body.getAnalysisId(), body.getMemo());
-            }
-            return new ResponseEntity<>(rec, HttpStatus.CREATED);
-        } catch (ResponseStatusException rse) {
-            throw rse;
-        } catch (IllegalArgumentException iae) {
-            return ResponseEntity.badRequest().body(iae.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<?> createRec(@RequestBody CreateRequest body) {
+    	DietRecommendation rec;
+    	
+        if (body.getPhotoId() != null) {
+            rec = dietRecommendationService.createByPhotoId(body.getPhotoId(), body.getMemo());
+        } else {
+            rec = dietRecommendationService.createByAnalysisId(body.getAnalysisId(), body.getMemo());
         }
+        
+        if (rec == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        
+        return new ResponseEntity<DietRecommendation>(rec, HttpStatus.CREATED);
     }
 
     // ===========================
@@ -117,6 +99,7 @@ public class DietRecommendationController {
     //    - 프롬프트/룰 구성은 Python 단 처리
     // ===========================
     @Operation(summary = "AI 식단 추천 생성", description = "추천 기록(recId) 컨텍스트를 AI에 전달하고 응답을 diet_result에 저장합니다.")
+    @PreAuthorize("@dietSecurity.isRecOwner(#recId, principal)")
     @PostMapping("/{recId}")
     public ResponseEntity<?> generateDietResult(
             @Parameter(description = "추천 식단 기록 ID", required = true)
@@ -157,29 +140,24 @@ public class DietRecommendationController {
     // 2. 추천 식단 목록 조회 (List)
     // ===========================
     @Operation(summary = "추천 식단 목록 조회", description = "추천 기록(recId)에 매핑된 모든 메뉴 리스트를 조회합니다.")
+    @PreAuthorize("@dietSecurity.isRecOwner(#recId, principal)")
     @GetMapping("/{recId}")
     public ResponseEntity<?> getListByRecId(
             @Parameter(description = "추천 식단 기록 ID", required = true)
-            @PathVariable("recId") Long recId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        try {
-            checkAuthorityByRecId(recId, userDetails); // 권한 검사
-
+            @PathVariable("recId") Long recId) {
+    	
             List<DietResult> list = dietResultService.getDietResultsByRecId(recId);
             if (list != null && !list.isEmpty()) {
                 return new ResponseEntity<>(list, HttpStatus.OK);
             }
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
     }
 
     // ===========================
     // 3. 추천 식단 상세 조회 (Detail)
     // ===========================
     @Operation(summary = "추천 식단 상세 조회", description = "개별 메뉴(resultId) 상세 정보를 조회합니다.")
+    
     @GetMapping("/results/{resultId}") // URL: /api/diet-recommendations/results/{resultId}
     public ResponseEntity<?> getDetail(
             @Parameter(description = "개별 식단 결과 ID (diet_result PK)", required = true)
@@ -229,33 +207,7 @@ public class DietRecommendationController {
     // ===========================
     // Helper Method (권한 검사)
     // ===========================
-    private Long resolveOwnerUserId(CreateRequest body) {
-        if (body.getPhotoId() != null) {
-            Photo photo = photoService.selectOne(body.getPhotoId());
-            if (photo == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "photo not found. photoId=" + body.getPhotoId());
-            }
-            return photo.getUserId();
-        }
-        AnalysisResult ar = analysisResultService.getById(body.getAnalysisId());
-        if (ar == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "analysis_result not found. analysisId=" + body.getAnalysisId());
-        }
-        Photo photo = photoService.selectOne(ar.getPhotoId());
-        if (photo == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "photo not found. photoId=" + ar.getPhotoId());
-        }
-        return photo.getUserId();
-    }
 
-    private void checkAuthorityByUserId(Long ownerUserId, CustomUserDetails userDetails) {
-        if (userDetails.getUser().getRole().equals("ADMIN")) {
-            return;
-        }
-        if (!ownerUserId.equals(userDetails.getUser().getUserId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인 리소스만 접근 가능합니다.");
-        }
-    }
 
     private void checkAuthorityByRecId(Long recId, CustomUserDetails userDetails) {
         DietContext context = dietContextService.getContextForRec(recId);

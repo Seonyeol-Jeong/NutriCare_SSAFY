@@ -1,5 +1,6 @@
 package com.nutricare.model.service;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +24,13 @@ public class AnalysisResultServiceImpl implements AnalysisResultService {
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isPhotoOwner(#photoId, principal)")
     public AnalysisResult getByPhotoId(Long photoId) {
         return analysisResultDao.selectByPhotoId(photoId);
     }
 
     @Override
+    @PreAuthorize("@dietSecurity.isAnalysisOwner(#analysisId, principal)")
     public AnalysisResult getById(Long analysisId) {
         return analysisResultDao.selectById(analysisId);
     }

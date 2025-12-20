@@ -26,7 +26,12 @@
             >
           </li>
         </ul>
-        <div class="d-flex align-items-center">
+
+        <div class="navbar-center d-none d-lg-block">
+          <img :src="NutricareTypo" alt="NutriCare" class="typo-img" />
+        </div>
+
+        <div class="d-flex align-items-center ms-auto">
           <template v-if="!userStore.isLoggedIn">
             <button class="btn btn-sm btn-outline-secondary me-2" type="button" @click="goTo('login')">
               로그인
@@ -68,6 +73,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import Logo from '@/assets/Logo.png'
+import NutricareTypo from '@/assets/NutricareTypo.png'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -92,6 +98,17 @@ function goTo(name, routeOptions = {}) {
 <style scoped>
 .logo-img {
   height: 32px;
+  width: auto;
+}
+
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.typo-img {
+  height: 48px;
   width: auto;
 }
 

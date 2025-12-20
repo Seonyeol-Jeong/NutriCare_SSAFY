@@ -3,9 +3,12 @@ package com.nutricare.model.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.nutricare.config.security.CustomUserDetails;
 import com.nutricare.model.dao.HealthProfileDao;
 import com.nutricare.model.dao.UserDao;
 import com.nutricare.model.dto.HealthProfile;
@@ -36,6 +39,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // 2) 전체조회
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Override
     public List<User> getAllUsers() {
         return userDao.findAllUsers();
@@ -43,18 +47,21 @@ public class UserServiceImpl implements UserService {
 
     // 3) 상세조회
     @Override
+    @PreAuthorize("@userSecurity.isSelf(#userId, principal)")
     public User getUserDetail(Long userId) {
         return userDao.findUserById(userId);
     }
 
     // 4-1) 회원 정보 수정
     @Override
+    @PreAuthorize("@userSecurity.isSelf(#user.userId, principal)")
     public boolean updateUserInfo(User user) {
         return userDao.updateUserInfo(user) > 0;
     }
     
     // 4-2) 비밀번호 변경 (핵심 로직)
     @Override
+    @PreAuthorize("@userSecurity.isSelf(#userId, principal)")
     public boolean updatePassword(Long userId, String currentPassword, String newPassword) {
         // 1. 현재 유저 정보 가져오기 (DB에 저장된 암호화된 비번을 알기 위해)
         User user = userDao.findUserById(userId);
@@ -74,6 +81,7 @@ public class UserServiceImpl implements UserService {
 
     // 5) 삭제
     @Override
+    @PreAuthorize("@userSecurity.isSelf(#userId, principal)")
     public boolean deleteUser(Long userId) {
         return userDao.deleteUser(userId) > 0;
     }
@@ -103,6 +111,7 @@ public class UserServiceImpl implements UserService {
     
     // 8) 회원 정보 + 건강 정보 조합하여 반환
     @Override
+    @PreAuthorize("@userSecurity.isSelf(#userId, principal)")
     public UserDetailResponse getUserWithProfile(Long userId) {
         // 1. 유저 기본 정보 조회
         User user = userDao.findUserById(userId);

@@ -5,6 +5,7 @@ import java.util.Collections;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,6 +18,7 @@ import com.nutricare.config.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity //스프링 Security 활성화
+@EnableMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SecurityConfig {
 	
 	private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -43,8 +45,8 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/voice/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/boards/**").permitAll()
-                // [관리자 전용] /admin 하위 모든 경로는 ADMIN 권한 필요
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // [관리자 전용] /admin 하위 모든 경로는 ADMIN 권한 필요 메서드
+//                .requestMatchers("/api/admin/**").hasRole("ADMIN")
              // [나머지 모든 요청] 인증(로그인)된 사용자만 접근 가능
                 .anyRequest().authenticated()
          )

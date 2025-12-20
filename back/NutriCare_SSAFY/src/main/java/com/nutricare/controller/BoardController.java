@@ -107,21 +107,16 @@ public class BoardController {
 	@Operation(summary = "게시글 수정", description = "게시글 내용을 수정합니다.")
 	@PutMapping("/{boardId}")
 	public ResponseEntity<?> update(@PathVariable("boardId") long boardId, @RequestBody Board board,
-			@AuthenticationPrincipal CustomUserDetails userDetails) {
-		try {
-			checkAuthority(boardId, userDetails);
-			
-			board.setBoardId(boardId);
-
-			int result = boardService.update(board);
-			if (result > 0) {
-				return new ResponseEntity<Integer>(result, HttpStatus.OK);
-			}
-			return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+	        @AuthenticationPrincipal CustomUserDetails userDetails) {
+	    // try-catch 제거 (혹은 필요한 예외만 catch)
+	    
+	    board.setBoardId(boardId);
+	    int result = boardService.update(board); // 예외 발생 시 GlobalExceptionHandler로 자동 이동
+	    
+	    if (result > 0) {
+	        return new ResponseEntity<Integer>(result, HttpStatus.OK);
+	    }
+	    return new ResponseEntity<Void>(HttpStatus.BAD_REQUEST);
 	}
 
 	// 5. 게시글 삭제 (보안 강화)
@@ -130,7 +125,6 @@ public class BoardController {
 	public ResponseEntity<?> delete(@PathVariable("boardId") long boardId,
 			@AuthenticationPrincipal CustomUserDetails userDetails) { 
 		try {
-			checkAuthority(boardId, userDetails);
 
 			int result = boardService.delete(boardId);
 			if (result > 0) {
@@ -142,23 +136,5 @@ public class BoardController {
 			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
-	private void checkAuthority(Long boardId, CustomUserDetails userDetails) {
-        // 1. 게시글 존재 확인
-        Board board = boardService.selectById(boardId);
-        if (board == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다.");
-        }
-
-        // 2. 관리자(ADMIN)는 모든 글 수정/삭제 가능 (프리패스)
-        if (userDetails.getUser().getRole().equals("ADMIN")) {
-            return;
-        }
-
-        // 3. 작성자 본인 확인
-        if (!board.getUserId().equals(userDetails.getUser().getUserId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 게시글에 대한 권한이 없습니다.");
-        }
-    }
 
 }

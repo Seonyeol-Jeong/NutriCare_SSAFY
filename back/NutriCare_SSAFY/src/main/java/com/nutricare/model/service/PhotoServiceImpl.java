@@ -2,6 +2,7 @@ package com.nutricare.model.service;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.nutricare.model.dao.PhotoDao;
@@ -22,16 +23,19 @@ public class PhotoServiceImpl implements PhotoService {
 	}
 
 	@Override
+	@PreAuthorize("@userSecurity.isSelf(#userId, principal)")
 	public List<Photo> selectListByUserId(long userId) {
 		return photoDao.selectListByUserId(userId);
 	}
 
 	@Override
+	@PreAuthorize("@dietSecurity.isPhotoOwner(#photoId, principal)")
 	public Photo selectOne(long photoId) {
 		return photoDao.selectOne(photoId);
 	}
 
 	@Override
+	@PreAuthorize("@dietSecurity.isPhotoOwner(#photoId, principal)")
 	public int delete(long photoId) {
 		return photoDao.delete(photoId);
 	}

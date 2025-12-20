@@ -125,7 +125,7 @@ public class UserPhotoController {
             // 3. AI 분석 요청 및 결과 저장
             String diagnosis = null;
             try {
-                diagnosis = aiAnalysisApiService.requestAnalysis(photo.getPhotoId(), userId, fileUrl);
+                diagnosis = aiAnalysisApiService.requestAnalysis(photo.getPhotoId(), fileUrl);
                 if (diagnosis != null) {
                     AnalysisResult analysisResult = new AnalysisResult(photo.getPhotoId(), diagnosis);
                     analysisResultService.save(analysisResult);

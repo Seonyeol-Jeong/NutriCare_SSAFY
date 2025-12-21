@@ -20,6 +20,7 @@ import UserPasswordView from '@/views/user/UserPasswordView.vue'
 import MyBoardListView from '@/views/board/MyBoardListView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import OAuthCallback from '@/views/user/OAuthCallback.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -143,7 +144,12 @@ const router = createRouter({
       path: '/user/updatePassword/:userid',
       name: 'updatePassword',
       component: UserPasswordView,
-    }
+    },
+    {
+      path : '/oauth/callback' ,
+      name : 'oauthCallback' ,
+      component : OAuthCallback,
+    },
   ],
 })
 
@@ -157,7 +163,8 @@ router.beforeEach((to, from, next) => {
     'Home', 'pageDescribe', 'engineeringDescribe', 
     'board', 'boardList', 'boardDetail', 
     'userLogin', 'login', 
-    'userJoin', 'signup'
+    'userJoin', 'signup',
+    'oauthCallback' // OAuth 콜백 페이지 추가
   ]
 
   const authRequired = !publicPages.includes(to.name)

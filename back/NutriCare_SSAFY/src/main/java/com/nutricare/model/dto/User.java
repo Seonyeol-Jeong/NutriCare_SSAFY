@@ -13,28 +13,35 @@ public class User {
     private LocalDateTime updatedAt;// updated_at
     private Boolean isDeleted;      // is_deleted (TINYINT → Boolean)
     private String role;
+    private String provider; // "google", "naver" 등
+    private String providerId;
     
     // 기본 생성자
     public User() {}
     
     // 전체 생성자
-    public User(Long userId, String email, String passwordHash, String name, Integer birthYear, String gender,
-    		LocalDateTime createdAt, LocalDateTime updatedAt, Boolean isDeleted, String role) {
-    	super();
-    	this.userId = userId;
-    	this.email = email;
-    	this.passwordHash = passwordHash;
-    	this.name = name;
-    	this.birthYear = birthYear;
-    	this.gender = gender;
-    	this.createdAt = createdAt;
-    	this.updatedAt = updatedAt;
-    	this.isDeleted = isDeleted;
-    	this.role = role;
-    }
+
 	
 	public String getRole() {
 		return role;
+	}
+
+	public User(Long userId, String email, String passwordHash, String name, Integer birthYear, String gender,
+			LocalDateTime createdAt, LocalDateTime updatedAt, Boolean isDeleted, String role, String provider,
+			String providerId) {
+		super();
+		this.userId = userId;
+		this.email = email;
+		this.passwordHash = passwordHash;
+		this.name = name;
+		this.birthYear = birthYear;
+		this.gender = gender;
+		this.createdAt = createdAt;
+		this.updatedAt = updatedAt;
+		this.isDeleted = isDeleted;
+		this.role = role;
+		this.provider = provider;
+		this.providerId = providerId;
 	}
 
 	public void setRole(String role) {
@@ -50,8 +57,6 @@ public class User {
 		this.birthYear = birthYear;
 		this.gender = gender;
 	}
-
-	
 
 	// getter & setter
 	public Long getUserId() {
@@ -126,13 +131,29 @@ public class User {
 	public void setIsDeleted(Boolean isDeleted) {
 		this.isDeleted = isDeleted;
 	}
+	
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
+	}
+
+	public String getProviderId() {
+		return providerId;
+	}
+
+	public void setProviderId(String providerId) {
+		this.providerId = providerId;
+	}
 
 	@Override
 	public String toString() {
 		return "User [userId=" + userId + ", email=" + email + ", passwordHash=" + passwordHash + ", name=" + name
 				+ ", birthYear=" + birthYear + ", gender=" + gender + ", createdAt=" + createdAt + ", updatedAt="
-				+ updatedAt + ", isDeleted=" + isDeleted + "]";
+				+ updatedAt + ", isDeleted=" + isDeleted + ", role=" + role + ", provider=" + provider + ", providerId="
+				+ providerId + "]";
 	}
-    
-    
+
 }

@@ -34,6 +34,11 @@
         {{ isLoading ? '로그인 중...' : '로그인' }}
       </button>
     </form>
+    <div class="social-login">
+      <button @click="googleLogin" class="google-btn">
+        <img src="@/assets/google_logo.png" alt="Google" width="20" /> 구글 계정으로 로그인
+      </button>
+    </div>
     
     <div class="form-footer">
       <p>계정이 없으신가요? <router-link :to="{ name: 'userJoin' }">회원가입</router-link></p>
@@ -53,6 +58,9 @@ const email = ref('');
 const password = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
+const googleLogin = () => {
+  window.location.href = "http://localhost:8080/oauth2/authorization/google";
+};
 
 const onLogin = async () => {
   if (!email.value || !password.value) {
@@ -178,5 +186,33 @@ const onLogin = async () => {
 
 .form-footer a:hover {
   text-decoration: underline;
+}
+
+.social-login {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.google-btn {
+  width: 100%;
+  background-color: #ffffff;
+  color: #555;
+  border: 1px solid #ddd;
+  padding: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.google-btn:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 </style>

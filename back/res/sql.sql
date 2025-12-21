@@ -1,4 +1,4 @@
--- 25.12.12 수정
+-- 25.12.21 수정
 -- 데이터베이스 생성 및 선택
 DROP DATABASE IF EXISTS nutricare_db;
 CREATE DATABASE nutricare_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -18,6 +18,8 @@ CREATE TABLE `user` (
   `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `is_deleted`    TINYINT(1)   NOT NULL DEFAULT 0,
+  `provider`		VARCHAR(20) DEFAULT NULL,
+  `provider_id`		VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `uk_user_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

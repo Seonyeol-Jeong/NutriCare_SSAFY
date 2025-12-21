@@ -17,22 +17,24 @@
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <result property="isDeleted" column="is_deleted"/>
+        <result property="provider" column="provider"/>
+        <result property="providerId" column="provider_id"/>
     </resultMap>
 
     <!-- 공통 SELECT 칼럼 -->
     <sql id="userColumns">
         user_id, email, password_hash, name,
         birth_year, gender, role,
-        created_at, updated_at, is_deleted
+        created_at, updated_at, is_deleted, provider, provider_id
     </sql>
 
     <!-- 1) 유저 등록 (POST /user) -->
-    <insert id="insertUser" parameterType="com.nutricare.model.dto.User">
-        INSERT INTO user
-            (email, password_hash, name, birth_year, gender)
-        VALUES
-            (#{email}, #{passwordHash}, #{name}, #{birthYear}, #{gender});
-    </insert>
+    <insert id="insertUser" parameterType="com.nutricare.model.dto.User" useGeneratedKeys="true" keyProperty="userId">
+	    INSERT INTO user
+	        (email, password_hash, name, birth_year, gender, role, provider, provider_id)
+	    VALUES
+	        (#{email}, #{passwordHash}, #{name}, #{birthYear}, #{gender}, #{role}, #{provider}, #{providerId});
+	</insert>
 
     <!-- 2) 유저 전체 조회 (GET /admin/all) -->
     <select id="findAllUsers" resultMap="userResultMap">

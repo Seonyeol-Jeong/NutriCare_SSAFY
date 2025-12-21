@@ -1,7 +1,7 @@
 package com.nutricare.config;
 
 import java.util.Collections;
-
+import com.nutricare.config.security.OAuth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,16 +15,22 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.nutricare.config.security.JwtAuthenticationFilter;
+import com.nutricare.config.security.OAuth2SuccessHandler;
 
 @Configuration
 @EnableWebSecurity //스프링 Security 활성화
 @EnableMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SecurityConfig {
+
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2UserService oAuth2UserService;
+	private final OAuth2SuccessHandler authSuccessHandler;
 	
-	private JwtAuthenticationFilter jwtAuthenticationFilter;
-	
-	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, OAuth2UserService OAuth2UserService, OAuth2SuccessHandler authSuccessHandler) {
 		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+		this.oAuth2UserService = OAuth2UserService;
+		this.authSuccessHandler = authSuccessHandler;
+		
 	}
 	
 	@Bean
@@ -50,6 +56,12 @@ public class SecurityConfig {
              // [나머지 모든 요청] 인증(로그인)된 사용자만 접근 가능
                 .anyRequest().authenticated()
          )
+		.oauth2Login(oauth2 -> oauth2
+				.userInfoEndpoint(userInfo -> userInfo
+						.userService(oAuth2UserService)
+					)
+					.successHandler(authSuccessHandler)
+		)
 		.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}

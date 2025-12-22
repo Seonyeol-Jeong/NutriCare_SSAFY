@@ -16,7 +16,7 @@ from PIL import Image
 # QLoRA adapter 경로/베이스 모델은 env로 덮어쓸 수 있습니다.
 _ROOT_DIR = Path(__file__).resolve().parents[1]  # AI 디렉터리
 BASE_MODEL = os.environ.get("DIET_BASE_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
-ADAPTER_PATH = Path(os.environ.get("DIET_ADAPTER_PATH", _ROOT_DIR / "notebooks" / "qlora-adapter"))
+ADAPTER_PATH = Path(os.environ.get("DIET_ADAPTER_PATH", "/root/ssafy_1th/notebooks/qlora-adapter"))
 
 
 class DietContextModel(BaseModel):
@@ -120,6 +120,16 @@ def _load_model_once():
     model.eval()
 
     _MODEL, _PROCESSOR = model, processor
+
+    lora_params = [
+    n for n, p in model.named_parameters()
+    if "lora" in n.lower()
+    ]
+
+    if not lora_params:
+        raise RuntimeError("LoRA 파라미터가 없음")
+
+    print(f"[OK] LoRA params loaded: {len(lora_params)}")
     return _MODEL, _PROCESSOR
 
 

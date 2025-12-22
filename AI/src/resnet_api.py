@@ -9,8 +9,9 @@ class PredictRequest(BaseModel):
     user_id: int
     photo_url: str  # 로컬 경로 또는 http/https URL
 
+CLASS_NAMES = ["건선", "아토피", "여드름", "정상", "주사", "지루"]
 
-app = FastAPI(title="ResNet18 Inference (MLflow)", version="1.0")
+app = FastAPI(title="ResNet18 Inference (MLflow)", version="1.0") 
 
 
 @app.post("/analyze", summary="예측 결과 반환")

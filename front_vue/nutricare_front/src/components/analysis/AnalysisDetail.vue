@@ -58,10 +58,6 @@
       </div>
     </main>
 
-    <div class="disclaimer">
-      <p>⚠️ 이 결과는 참고용이며, 정확한 진단은 전문의와 상담하세요.</p>
-    </div>
-
     <footer class="detail-footer">
       <button type="button" @click="goList">목록으로</button>
     </footer>
@@ -361,22 +357,6 @@ function formatCount(num) {
 .error-msg {
   color: #e74c3c;
   margin-top: 10px;
-}
-
-.disclaimer {
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #fff9e6;
-  border: 1px solid #ffe58f;
-  border-radius: 8px;
-  color: #856404;
-  font-size: 14px;
-  text-align: center;
-}
-
-.disclaimer p {
-  margin: 0;
-  font-weight: 500;
 }
 
 .detail-footer {

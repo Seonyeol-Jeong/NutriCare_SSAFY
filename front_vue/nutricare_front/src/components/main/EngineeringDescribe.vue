@@ -26,7 +26,6 @@
         <div class="feature-body">
           <p class="feature-name">{{ feature.name }}</p>
           <p class="feature-desc">{{ feature.desc }}</p>
-          <a :href="feature.github" target="_blank" class="github-link">{{ feature.github }}</a>
         </div>
       </article>
     </div>
@@ -48,7 +47,6 @@ const features = [
     name: '장준호',
     image: joonhoImg,
     desc: '주요 기술 소개',
-    github: 'https://github.com/jangsee95',
   },
   {
     id: 2,
@@ -56,7 +54,6 @@ const features = [
     name: '정선열',
     image: seonyeolImg,
     desc: '주요 기술 소개',
-    github: 'https://github.com/Seonyeol-Jeong',
   },
 ]
 
@@ -192,18 +189,6 @@ function goToTech() {
   margin: 0;
   color: #4b4b4b;
   font-size: 14px;
-}
-
-.github-link {
-  margin: 0;
-  font-size: 12px;
-  color: #5a45b0;
-  word-break: break-all;
-  text-decoration: none;
-}
-
-.github-link:hover {
-  color: #433391;
 }
 
 @media (max-width: 768px) {

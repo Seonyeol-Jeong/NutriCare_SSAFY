@@ -7,12 +7,9 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -34,8 +31,6 @@ public class AiAnalysisApiServiceImpl implements AiAnalysisApiService {
     // FastAPI URL (.env로 관리)
     private final String aiUrl;
     private final Logger log = LoggerFactory.getLogger(getClass());
-	
-	
     public AiAnalysisApiServiceImpl(ObjectMapper objectMapper,
                                     @Value("${ai.fastapi.url}") String aiUrl) {
         this.restTemplate = new RestTemplate();
@@ -93,5 +88,4 @@ public class AiAnalysisApiServiceImpl implements AiAnalysisApiService {
             throw new RuntimeException("시스템 내부 오류로 분석에 실패했습니다.", e);
         }
     }
-    
 }

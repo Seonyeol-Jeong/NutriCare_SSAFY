@@ -1,120 +1,100 @@
 <template>
-  <div class="container my-5">
-    <div class="card shadow-sm border-light">
-      <div class="card-header bg-white py-3">
-        <h2 class="mb-0 h5">프로필 수정</h2>
-      </div>
-      <div class="card-body p-4">
+  <div class="profile-page-wrapper">
+    <div class="unified-profile-card">
+      <!-- Left Sidebar (Static Visual Anchor) -->
+      <aside class="profile-side">
+        <div class="avatar-circle">
+          {{ userInitial }}
+        </div>
+        <h1 class="user-name">{{ form.name || '사용자' }}</h1>
+        <p class="user-email">{{ userStore.userInfo?.email || '이메일 정보 없음' }}</p>
+        
+        <div class="side-actions">
+          <button class="action-btn secondary" @click="onLater">
+            취소 / 돌아가기
+          </button>
+        </div>
+      </aside>
+
+      <!-- Right Main (Edit Form) -->
+      <main class="info-side">
         <form @submit.prevent="onSubmit">
-          <div class="row g-3">
-            <!-- Basic Fields -->
-            <div class="col-12" v-for="field in basicFields" :key="field.key">
-              <div class="input-group">
-                <span class="input-group-text label-box" :title="field.label">
-                  <i :class="field.icon"></i>
-                </span>
-                <input
-                  :id="field.key"
-                  v-model="form[field.key]"
-                  :type="field.type"
-                  class="form-control"
-                  :placeholder="field.label"
-                  :required="field.required"
-                  :step="field.step"
-                />
+          <section class="info-group">
+            <h3 class="group-title">기본 정보 수정</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label for="name" class="label">이름</label>
+                <input id="name" v-model="form.name" type="text" class="input-field" placeholder="이름 입력" required />
               </div>
-            </div>
-
-            <!-- Gender -->
-            <div class="col-12">
-              <div class="input-group">
-                <span class="input-group-text label-box" title="성별">
-                  <i class="bi bi-gender-ambiguous"></i>
-                </span>
-                <div class="form-control d-flex align-items-center flex-wrap gap-2 button-group-radio">
-                  <template v-for="option in genderOptions" :key="option.value">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      :id="`gender-${option.value}`"
-                      v-model="form.gender"
-                      :value="option.value"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-primary btn-sm" :for="`gender-${option.value}`">{{ option.label }}</label>
-                  </template>
+              <div class="form-item">
+                <label for="birthYear" class="label">출생연도</label>
+                <input id="birthYear" v-model="form.birthYear" type="number" class="input-field" placeholder="YYYY" />
+              </div>
+              <div class="form-item full-width">
+                <label class="label">성별</label>
+                <div class="radio-group">
+                  <label v-for="opt in genderOptions" :key="opt.value" class="radio-chip">
+                    <input type="radio" v-model="form.gender" :value="opt.value" name="gender" />
+                    <span class="chip-text">{{ opt.label }}</span>
+                  </label>
                 </div>
               </div>
             </div>
+          </section>
 
-            <!-- Activity Level -->
-            <div class="col-12">
-              <div class="input-group">
-                <span class="input-group-text label-box" title="활동 정도">
-                  <i class="bi bi-activity"></i>
-                </span>
-                <div class="form-control d-flex align-items-center flex-wrap gap-2 button-group-radio">
-                  <template v-for="option in activityOptions" :key="option.value">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      :id="`activity-${option.value}`"
-                      v-model="form.activityLevel"
-                      :value="option.value"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-primary btn-sm" :for="`activity-${option.value}`">{{ option.label }}</label>
-                  </template>
+          <div class="divider"></div>
+
+          <section class="info-group">
+            <h3 class="group-title">건강 프로필 설정</h3>
+            <div class="form-grid">
+              <div class="form-item">
+                <label for="height" class="label">키 (cm)</label>
+                <input id="height" v-model="form.heightCm" type="number" step="0.1" class="input-field" placeholder="000.0" />
+              </div>
+              <div class="form-item">
+                <label for="weight" class="label">체중 (kg)</label>
+                <input id="weight" v-model="form.weightKg" type="number" step="0.1" class="input-field" placeholder="00.0" />
+              </div>
+              
+              <div class="form-item full-width">
+                <label class="label">활동량</label>
+                <div class="radio-group wrap">
+                  <label v-for="opt in activityOptions" :key="opt.value" class="radio-chip">
+                    <input type="radio" v-model="form.activityLevel" :value="opt.value" name="activity" />
+                    <span class="chip-text">{{ opt.label }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-item full-width">
+                <label class="label">목표</label>
+                <div class="radio-group">
+                  <label v-for="opt in goalOptions" :key="opt.value" class="radio-chip">
+                    <input type="radio" v-model="form.goalType" :value="opt.value" name="goal" />
+                    <span class="chip-text">{{ opt.label }}</span>
+                  </label>
                 </div>
               </div>
             </div>
+          </section>
 
-            <!-- Goal Type -->
-            <div class="col-12">
-              <div class="input-group">
-                <span class="input-group-text label-box" title="목표">
-                  <i class="bi bi-bullseye"></i>
-                </span>
-                <div class="form-control d-flex align-items-center flex-wrap gap-2 button-group-radio">
-                  <template v-for="option in goalOptions" :key="option.value">
-                    <input
-                      type="radio"
-                      class="btn-check"
-                      :id="`goal-${option.value}`"
-                      v-model="form.goalType"
-                      :value="option.value"
-                      autocomplete="off"
-                    />
-                    <label class="btn btn-outline-primary btn-sm" :for="`goal-${option.value}`">{{ option.label }}</label>
-                  </template>
-                </div>
-              </div>
-            </div>
-          </div>
-          <hr class="my-4" />
-          <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-outline-secondary" @click="onLater">
-              <i class="bi bi-x-lg"></i> 나중에 하기
-            </button>
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-check-lg"></i> 수정
-            </button>
+          <div class="form-actions">
+            <button type="submit" class="save-btn">저장하기</button>
           </div>
         </form>
-      </div>
+      </main>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, watch, onMounted } from 'vue'
+import { reactive, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-// 백엔드 필드명에 맞춘 폼 구조
 const form = reactive({
   name: '',
   birthYear: '',
@@ -125,12 +105,34 @@ const form = reactive({
   goalType: '',
 })
 
+const userInitial = computed(() => {
+  const name = form.name || userStore.userInfo?.name
+  return name ? name.charAt(0).toUpperCase() : 'U'
+})
+
+const genderOptions = [
+  { value: 'MALE', label: '남성' },
+  { value: 'FEMALE', label: '여성' },
+]
+
+const activityOptions = [
+  { value: 'LOW', label: '낮음' },
+  { value: 'MEDIUM', label: '보통' },
+  { value: 'HIGH', label: '높음' },
+]
+
+const goalOptions = [
+  { value: 'GAIN', label: '증량' },
+  { value: 'MAINTAIN', label: '유지' },
+  { value: 'LOSS', label: '감량' },
+]
+
 function syncFormFromStore() {
   const info = userStore.userInfo || {}
   const profile = userStore.healthProfile || {}
 
   form.name = info.name ?? ''
-  form.birthYear = info.birthYear  ?? ''
+  form.birthYear = info.birthYear ?? ''
   form.gender = info.gender ?? 'MALE'
   form.heightCm = profile.heightCm ?? ''
   form.weightKg = profile.weightKg ?? ''
@@ -154,30 +156,6 @@ function normalizeOneDecimal(value) {
   if (Number.isNaN(num)) return ''
   return Number(num.toFixed(1))
 }
-
-const basicFields = [
-  { key: 'name', label: '이름', icon: 'bi bi-person', type: 'text', required: true },
-  { key: 'birthYear', label: '출생연도', icon: 'bi bi-calendar-event', type: 'number', required: false, step: '1' },
-  { key: 'heightCm', label: '키(cm)', icon: 'bi bi-rulers', type: 'number', required: false, step: '0.1' },
-  { key: 'weightKg', label: '몸무게(kg)', icon: 'bi bi-speedometer2', type: 'number', required: false, step: '0.1' },
-]
-
-const genderOptions = [
-  { value: 'MALE', label: '남성' },
-  { value: 'FEMALE', label: '여성' },
-]
-
-const activityOptions = [
-  { value: 'LOW', label: '낮음 (운동 안함)' },
-  { value: 'MEDIUM', label: '보통 (주 2-3회)' },
-  { value: 'HIGH', label: '높음 (주 4회 이상)' },
-]
-
-const goalOptions = [
-  { value: 'GAIN', label: '증량' },
-  { value: 'MAINTAIN', label: '유지' },
-  { value: 'LOSS', label: '감량' },
-]
 
 async function onSubmit() {
   const payload = {
@@ -203,63 +181,238 @@ function onLater() {
 </script>
 
 <style scoped>
-.container {
-  max-width: 800px;
-}
-.card {
-  border-radius: 0.75rem;
-}
-.label-box {
-  width: 42px;
+/* Reuse layout styles from UserDetailForm.vue for consistency */
+.profile-page-wrapper {
+  padding: 40px 20px;
+  display: flex;
   justify-content: center;
-  background-color: #f8f9fa;
-  font-size: 1.1rem;
+  align-items: flex-start;
+  background-color: transparent;
+  min-height: 60vh;
 }
-.input-group {
-  border: 1px solid #dee2e6;
-  border-radius: 0.375rem;
+
+.unified-profile-card {
+  display: flex;
+  width: 100%;
+  max-width: 800px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
   overflow: hidden;
+  border: 1px solid #f0f0f0;
 }
-.input-group .form-control {
+
+/* Sidebar Profile */
+.profile-side {
+  width: 260px;
+  background-color: #f8f9fc;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-right: 1px solid #edf2f7;
+  flex-shrink: 0;
+}
+
+.avatar-circle {
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #6b55c7, #9b72e0);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 16px rgba(107, 85, 199, 0.2);
+}
+
+.user-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+}
+
+.user-email {
+  font-size: 13px;
+  color: #718096;
+  margin: 0 0 32px 0;
+  word-break: break-all;
+}
+
+.side-actions {
+  margin-top: auto;
+  width: 100%;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
   border: none;
+  transition: all 0.2s;
 }
-.input-group .label-box {
-  border: none;
+
+.action-btn.secondary {
+  background-color: white;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
 }
-.btn {
-  font-weight: 500;
+.action-btn.secondary:hover {
+  background-color: #edf2f7;
 }
-.btn i {
-  margin-right: 0.35rem;
-  font-size: 0.9em;
+
+/* Main Form Section */
+.info-side {
+  flex: 1;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
 }
-.form-check-label {
+
+.group-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #6b55c7;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a0aec0;
+}
+
+.input-field {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #2d3748;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: #6b55c7;
+}
+
+/* Radio Chips */
+.radio-group {
+  display: flex;
+  gap: 10px;
+}
+.radio-group.wrap {
+  flex-wrap: wrap;
+}
+
+.radio-chip {
   cursor: pointer;
 }
-/* Adjustments for radio button groups */
-.input-group .form-control {
-  height: auto; /* Allow content to dictate height */
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+
+.radio-chip input {
+  display: none;
 }
-.input-group .form-control.d-flex {
-  align-items: center;
+
+.chip-text {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #f7fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #718096;
+  transition: all 0.2s;
 }
-.button-group-radio {
-  padding: 0.5rem 0.75rem; /* Adjust padding to make buttons look good */
-  border-left: 0;
+
+.radio-chip input:checked + .chip-text {
+  background-color: #6b55c7;
+  color: white;
+  border-color: #6b55c7;
+  box-shadow: 0 4px 10px rgba(107, 85, 199, 0.2);
 }
-.button-group-radio .btn-check + .btn {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  border-radius: 0.25rem;
+
+.divider {
+  height: 1px;
+  background-color: #f1f5f9;
+  margin: 32px 0;
+  width: 100%;
 }
-.button-group-radio .btn-check:checked + .btn-outline-primary {
-  background-color: var(--bs-primary);
-  color: var(--bs-white);
+
+.form-actions {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
 }
-.button-group-radio .btn-check:checked + .btn-outline-primary:hover {
-  background-color: var(--bs-primary);
-  color: var(--bs-white);
+
+.save-btn {
+  background-color: #6b55c7;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(107, 85, 199, 0.25);
+}
+
+.save-btn:hover {
+  background-color: #5a45b0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(107, 85, 199, 0.35);
+}
+
+@media (max-width: 768px) {
+  .unified-profile-card {
+    flex-direction: column;
+    max-width: 400px;
+  }
+  
+  .profile-side {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #edf2f7;
+    padding: 32px;
+  }
+  
+  .info-side {
+    padding: 32px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .full-width {
+    grid-column: span 1;
+  }
 }
 </style>

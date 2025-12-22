@@ -8,6 +8,7 @@
       <div class="photo-container">
         <img v-if="user_photo?.photoUrl" :src="user_photo.photoUrl" alt="분석 사진" class="user-photo-img" />
         <div v-else class="photo-placeholder">사진 없음</div>
+        <p v-if="displayFileName" class="photo-filename">{{ displayFileName }}</p>
       </div>
       <div class="info-stack">
         <h2 class="diagnosis-title">{{ user_analysis_result?.diagnosisName || '분석 결과 없음' }}</h2>
@@ -47,13 +48,29 @@
             <strong>📝 Tip:</strong> {{ rec.notes }}
           </div>
           
-          <a v-if="rec.recipeUrl" :href="rec.recipeUrl" target="_blank" rel="noopener noreferrer" class="recipe-link">
-            <img v-if="rec.thumbnailUrl" :src="rec.thumbnailUrl" alt="레시피 썸네일" class="recipe-thumbnail"/>
-            <div class="recipe-link-text">
-              <span>레시피 영상 보러가기</span>
-              <span class="arrow">→</span>
+          <!-- 유튜브 영상 임베드 영역 -->
+          <div v-if="rec.embedUrl" class="video-container">
+            <div class="video-wrapper">
+              <iframe 
+                :src="rec.embedUrl" 
+                title="YouTube video player" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                allowfullscreen
+              ></iframe>
             </div>
-          </a>
+            <div class="video-info">
+              <h5 class="video-title">{{ rec.videoTitle }}</h5>
+              <div class="video-stats">
+                <span>👁️ 조회수 {{ formatCount(rec.viewCount) }}회</span>
+                <span>👍 좋아요 {{ formatCount(rec.likeCount) }}개</span>
+              </div>
+            </div>
+          </div>
+          <!-- 영상 로딩 중 -->
+          <div v-else-if="rec.menuName && youtubeLoading" class="video-loading">
+            <p>🎥 추천 레시피 영상을 찾는 중...</p>
+          </div>
         </div>
       </div>
     </main>
@@ -65,11 +82,12 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAnalysisStore } from '@/stores/analysis'
 import { useUserStore } from '@/stores/user'
+import { searchRecipeVideo } from '@/api/youtube'
 
 const router = useRouter()
 const route = useRoute()
@@ -92,6 +110,52 @@ const photoId = route.params.photoId
 
 // 식단 추천이 비어있는지 확인하는 computed
 const isRecommendationEmpty = computed(() => diet_recommendations.value.length === 0)
+
+// URL에서 파일명을 추출하는 computed
+const displayFileName = computed(() => {
+  if (!user_photo.value?.photoUrl) return ''
+  // 1. URL의 마지막 세그먼트 추출
+  const segments = user_photo.value.photoUrl.split('/')
+  const lastSegment = segments[segments.length - 1]
+  // 2. UUID(36자 + 언더바) 제거 시도 (예: 1c6f5ec3-6946-4abf-bc5d-dbd1e9881a85_파일명.webp)
+  // 언더바(_) 기준으로 나누어 첫 번째 파트가 UUID 형식인 경우 뒷부분 사용
+  if (lastSegment.includes('_')) {
+    return lastSegment.substring(lastSegment.indexOf('_') + 1)
+  }
+  return lastSegment
+})
+
+// 유튜브 정보 로딩 상태
+const youtubeLoading = ref(false);
+
+// 식단 목록이 변경되면 유튜브 정보를 가져옵니다.
+watch(diet_recommendations, async (newVal) => {
+  if (newVal && newVal.length > 0) {
+    await fetchYoutubeInfoForList();
+  }
+});
+
+async function fetchYoutubeInfoForList() {
+  if (youtubeLoading.value) return;
+  youtubeLoading.value = true;
+
+  // 이미 영상 정보가 있는 항목은 건너뛰고, 없는 항목만 검색
+  const promises = diet_recommendations.value.map(async (rec) => {
+    if ((!rec.embedUrl) && rec.menuName) {
+      const videoInfo = await searchRecipeVideo(rec.menuName);
+      if (videoInfo) {
+        // 반응형 상태 업데이트
+        rec.embedUrl = videoInfo.embedUrl;
+        rec.videoTitle = videoInfo.title;
+        rec.viewCount = videoInfo.viewCount;
+        rec.likeCount = videoInfo.likeCount;
+      }
+    }
+  });
+
+  await Promise.all(promises);
+  youtubeLoading.value = false;
+}
 
 onMounted(async () => {
   if (!photoId) {
@@ -131,28 +195,21 @@ onMounted(async () => {
 
 async function handleCreateRecommendation() {
   const analysisId = user_analysis_result.value?.analysisId
-  console.log("[AnalysisDetail] 버튼 클릭됨. analysisId:", analysisId);
   
   if (!analysisId) {
-    console.error("[AnalysisDetail] analysisId가 없습니다!", user_analysis_result.value);
     alert("분석 ID가 없어 추천을 생성할 수 없습니다.")
     return
   }
-  
-  console.log("[AnalysisDetail] 스토어 함수 호출 준비...");
-  console.log("[AnalysisDetail] analysisStore:", analysisStore);
   
   try {
     if (typeof analysisStore.createAndFetchDietRecommendation !== 'function') {
        throw new Error("createAndFetchDietRecommendation 함수가 스토어에 없습니다.");
     }
 
-    console.log("[AnalysisDetail] 스토어의 createAndFetchDietRecommendation 호출 시도...");
     await analysisStore.createAndFetchDietRecommendation({
       analysisId,
       memo: "식단 추천 생성 요청"
     })
-    console.log("[AnalysisDetail] 스토어 함수 실행 완료");
   } catch (err) {
     console.error("[AnalysisDetail] 실행 중 에러 발생:", err);
     alert("오류가 발생했습니다: " + err.message);
@@ -199,26 +256,36 @@ function formatCount(num) {
 
 .photo-container {
   width: 200px;
-  height: 200px;
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: visible; /* 파일명을 보여주기 위해 visible로 변경 */
   flex-shrink: 0;
 }
 
 .user-photo-img {
-  width: 100%;
-  height: 100%;
+  width: 200px;
+  height: 200px;
   object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.photo-filename {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.2;
 }
 
 .photo-placeholder {
-  width: 100%;
-  height: 100%;
+  width: 200px;
+  height: 200px;
   display: grid;
   place-items: center;
   background-color: #e0e0e0;
   color: #888;
+  border-radius: 12px;
 }
 
 .info-stack {
@@ -363,6 +430,65 @@ function formatCount(num) {
 
 .arrow {
   font-size: 20px;
+}
+
+/* 비디오 스타일 */
+.video-container {
+  margin-top: 16px;
+  background-color: #fafafa;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+.video-wrapper {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 비율 */
+  height: 0;
+  overflow: hidden;
+}
+
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.video-info {
+  padding: 12px;
+}
+
+.video-title {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+  
+  /* 두 줄까지만 표시 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.video-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+.video-loading {
+  margin-top: 12px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
 }
 
 .no-recommendations {

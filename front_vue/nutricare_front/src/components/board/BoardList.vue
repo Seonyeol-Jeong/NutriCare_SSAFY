@@ -1,77 +1,88 @@
 <template>
-  <section class="board-list">
-    <h2>게시판</h2>
+  <section class="board-container">
+    <header class="board-header">
+      <h2 class="title">커뮤니티</h2>
+      <p class="subtitle">건강한 정보를 공유하고 소통해보세요.</p>
+    </header>
 
-    <div v-if="isLoading" class="loading-spinner">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+    <div v-if="isLoading" class="loading-area">
+      <div class="spinner"></div>
     </div>
 
-    <div v-else-if="hasError" class="alert alert-danger" role="alert">
-      {{ hasError }}
+    <div v-else-if="hasError" class="error-msg">
+      ⚠️ {{ hasError }}
     </div>
 
     <template v-else>
-      <div class="controls d-flex justify-content-between align-items-center mb-3">
-        <button class="btn btn-primary" @click="goToCreate">글쓰기</button>
-        <div class="d-flex gap-2">
-          <select id="category" v-model="categoryFilter" class="form-select form-select-sm" aria-label="카테고리 필터">
+      <div class="toolbar">
+        <button class="write-btn" @click="goToCreate">
+          <span class="icon">✏️</span> 글쓰기
+        </button>
+        
+        <div class="filters">
+          <select v-model="categoryFilter" class="custom-select">
             <option value="">전체 카테고리</option>
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
-          <select id="sort" v-model="sortKey" class="form-select form-select-sm" aria-label="정렬 순서">
+          <select v-model="sortKey" class="custom-select">
             <option value="created_at_desc">최신순</option>
             <option value="created_at_asc">오래된순</option>
-            <option value="views_desc">조회수 높은순</option>
-            <option value="views_asc">조회수 낮은순</option>
+            <option value="views_desc">인기순</option>
           </select>
         </div>
       </div>
 
-      <div class="table-wrap">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">카테고리</th>
-              <th scope="col">제목</th>
-              <th scope="col">작성자</th>
-              <th scope="col">조회수</th>
-              <th scope="col">작성일</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="pagedPosts.length === 0">
-              <td colspan="6" class="text-center">게시글이 없습니다.</td>
-            </tr>
-            <tr v-for="post in pagedPosts" :key="post.boardId" @click="goDetail(post.boardId)">
-              <td>{{ post.boardId }}</td>
-              <td>{{ post.category }}</td>
-              <td>{{ post.title }}</td>
-              <td>{{ post.userName }}</td>
-              <td>{{ post.viewCount }}</td>
-              <td>{{ formatDate(post.createdAt) }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="post-list">
+        <div v-if="pagedPosts.length === 0" class="empty-state">
+          <p>등록된 게시글이 없습니다.</p>
+        </div>
+        
+        <article 
+          v-for="post in pagedPosts" 
+          :key="post.boardId" 
+          class="post-card" 
+          @click="goDetail(post.boardId)"
+        >
+          <div class="card-content">
+            <div class="card-header-row">
+              <span class="category-badge">{{ post.category }}</span>
+              <span class="date">{{ formatDate(post.createdAt) }}</span>
+            </div>
+            <h3 class="post-title">{{ post.title }}</h3>
+            <div class="card-footer-row">
+              <span class="author">by {{ post.userName }}</span>
+              <div class="meta-stats">
+                <span>👁️ {{ post.viewCount }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
       </div>
 
-      <div class="pagination-controls">
-        <button class="btn btn-sm btn-outline-secondary" :disabled="page === 1" @click="page--">
-          ‹
+      <!-- 페이지네이션 -->
+      <div class="pagination">
+        <button 
+          class="page-btn nav-btn" 
+          :disabled="page === 1" 
+          @click="page--"
+        >
+          &lt;
         </button>
-        <span v-for="p in totalPages" :key="p">
-          <button
-            class="btn btn-sm"
-            :class="{ 'btn-primary': p === page, 'btn-outline-secondary': p !== page }"
-            @click="page = p"
-          >
-            {{ p }}
-          </button>
-        </span>
-        <button class="btn btn-sm btn-outline-secondary" :disabled="page === totalPages" @click="page++">
-          ›
+        <button
+          v-for="p in totalPages"
+          :key="p"
+          class="page-btn"
+          :class="{ active: p === page }"
+          @click="page = p"
+        >
+          {{ p }}
+        </button>
+        <button 
+          class="page-btn nav-btn" 
+          :disabled="page === totalPages" 
+          @click="page++"
+        >
+          &gt;
         </button>
       </div>
     </template>
@@ -98,7 +109,7 @@ const categoryFilter = ref('');
 const sortKey = ref('created_at_desc');
 
 const page = ref(1);
-const pageSize = 10;
+const pageSize = 8; // 카드형이므로 페이지당 개수를 조금 줄임
 
 const filteredSortedPosts = computed(() => {
   let arr = [...boards.value];
@@ -133,7 +144,7 @@ const pagedPosts = computed(() => {
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('ko-KR');
+  return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }); // 포맷 변경
 };
 
 function goDetail(id) {
@@ -146,44 +157,217 @@ function goToCreate() {
 </script>
 
 <style scoped>
-.board-list {
-  width: 100%;
-  max-width: 900px;
+.board-container {
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 16px;
+  padding: 40px 20px;
+  background-color: #f8f9fa;
+  min-height: 80vh;
 }
 
-h2 {
-  margin-bottom: 2rem;
+.board-header {
   text-align: center;
+  margin-bottom: 40px;
 }
 
-.table-wrap {
-  border: 1px solid #dee2e6;
-  border-radius: 0.25rem;
-  background: #fff;
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #333;
+  margin-bottom: 8px;
 }
 
-.table {
-  margin-bottom: 0;
+.subtitle {
+  color: #666;
+  font-size: 16px;
 }
 
-.table tbody tr {
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.write-btn {
+  background: linear-gradient(135deg, #6b55c7, #5a45b0);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-weight: 600;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.pagination-controls {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
+.write-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(107, 85, 199, 0.3);
 }
 
-.loading-spinner {
+.filters {
+  display: flex;
+  gap: 12px;
+}
+
+.custom-select {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: white;
+  color: #555;
+  outline: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.custom-select:focus {
+  border-color: #6b55c7;
+}
+
+/* Post List */
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.post-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.post-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: #eaddff;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.category-badge {
+  background-color: #f3f0ff;
+  color: #6b55c7;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.date {
+  font-size: 13px;
+  color: #999;
+}
+
+.post-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1.4;
+}
+
+.card-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.meta-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+  background: white;
+  border-radius: 12px;
+  color: #888;
+}
+
+/* Pagination */
+.pagination {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 300px;
+  gap: 8px;
+  margin-top: 40px;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: white;
+  border-radius: 8px;
+  color: #555;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #f3f0ff;
+  color: #6b55c7;
+}
+
+.page-btn.active {
+  background: #6b55c7;
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading */
+.loading-area {
+  display: flex;
+  justify-content: center;
+  padding: 60px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #6b55c7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .toolbar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .filters {
+    justify-content: space-between;
+  }
 }
 </style>

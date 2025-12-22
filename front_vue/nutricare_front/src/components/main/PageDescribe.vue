@@ -1,6 +1,6 @@
 <template>
   <section class="page-describe container">
-    <h2 class="mb-4">NutriCare</h2>
+    <h1 class="brand-title">NutriCare</h1>
     <div class="hero">
       <div class="hero-visual">
         <div ref="trackRef" class="hero-track" role="list" aria-label="슬라이드 목록" @scroll="handleScroll"
@@ -16,6 +16,16 @@
             </div>
           </div>
         </div>
+
+        <div class="hero-text-content">
+          <transition name="fade" mode="out-in">
+            <div :key="currentIndex" class="text-wrapper">
+              <span class="slide-tag">{{ slides[currentIndex].title }}</span>
+              <p class="slide-description">{{ slides[currentIndex].description }}</p>
+            </div>
+          </transition>
+        </div>
+
         <div class="hero-dots" role="tablist" aria-label="슬라이드 선택">
           <button v-for="(slide, idx) in slides" :key="slide.id" class="dot" :class="{ active: idx === currentIndex }"
             type="button" :aria-label="`슬라이드 ${idx + 1}`" @click="goToSlide(idx)"></button>
@@ -41,9 +51,27 @@ import IntroImg3 from '@/assets/IntroImg3.png'
 const router = useRouter()
 
 const slides = ref([
-  { id: 1, title: '건강한 인물 이미지 1', image: IntroImg1 },
-  { id: 2, title: '건강한 인물 이미지 2', image: IntroImg2 },
-  { id: 3, title: '건강한 인물 이미지 3', image: IntroImg3 },
+  { 
+    id: 1, 
+    title: 'AI 분석', 
+    description: `당신의 건강 상태를
+AI로 한눈에 분석하세요.`, 
+    image: IntroImg1 
+  },
+  { 
+    id: 2, 
+    title: '맞춤 식단', 
+    description: `나만을 위한 맞춤형 AI 식단으로
+건강한 습관을 시작하세요.`, 
+    image: IntroImg2 
+  },
+  { 
+    id: 3, 
+    title: '스마트 케어', 
+    description: `데이터로 증명하는
+스마트한 영양 관리를 경험하세요.`, 
+    image: IntroImg3 
+  },
 ])
 
 const currentIndex = ref(0)
@@ -93,36 +121,40 @@ function goToAnalysis() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
-  padding: 32px 16px 48px;
+  gap: 40px;
+  padding: 60px 20px 80px;
   background: #f8f5eb;
   box-sizing: border-box;
-  border-radius: 10px; /* Soften the corners */
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); /* Soft, blurred shadow */
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+.brand-title {
+  font-size: 42px;
+  font-weight: 800;
+  color: #5a45b0;
+  margin-bottom: 0;
+  letter-spacing: -1px;
 }
 
 .hero {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1000px;
   display: flex;
   justify-content: center;
 }
 
 .hero-visual {
   width: 100%;
-  border: none;
-  background: transparent;
-  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
 }
 
 .hero-track {
   display: flex;
   width: 100%;
-  gap: 12px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
@@ -131,16 +163,7 @@ function goToAnalysis() {
 }
 
 .hero-track::-webkit-scrollbar {
-  height: 10px;
-}
-
-.hero-track::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.hero-track::-webkit-scrollbar-thumb {
-  background: #c8c8c8;
-  border-radius: 999px;
+  display: none;
 }
 
 .hero-slide {
@@ -151,105 +174,135 @@ function goToAnalysis() {
 .hero-image {
   width: 100%;
   position: relative;
-  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 360px;
-}
-.hero-image p {
-  position: relative;
-  z-index: 1;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  text-align: center;
+  min-height: 450px;
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
 }
 
 .hero-photo {
   width: 100%;
-  height: auto;
-  object-fit: contain;
-  display: block;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
   opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-  margin: 0;
-  padding: 0;
-  mask-image: radial-gradient(circle, black 80%, rgba(0, 0, 0, 0) 100%);
-  -webkit-mask-image: radial-gradient(circle, black 80%, rgba(0, 0, 0, 0) 100%); /* For Webkit browsers */
-  mask-mode: alpha; /* Standard for mask-image */
+  transform: scale(1.1);
+  transition: opacity 0.8s ease-out, transform 1.2s ease-out;
 }
 
 .hero-photo.active {
-  opacity: 1;
+  opacity: 1; /* 오버레이가 없으므로 투명도 1로 복구 */
+  transform: scale(1);
 }
 
-.hero-dots {
-  display: none;
+/* 텍스트 영역 스타일 */
+.hero-text-content {
+  min-height: 120px; /* 텍스트 변경 시 높이 흔들림 방지 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.text-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
+.slide-tag {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(90, 69, 176, 0.1);
+  color: #5a45b0;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.slide-description {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2c3e50;
+  line-height: 1.4;
+  white-space: pre-line;
+  margin: 0;
+}
+
+/* 페이드 애니메이션 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.hero-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  border: 1px solid #bdbdbd;
-  background: #efefef;
+  background: #dcd6f7;
+  border: none;
   cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
 }
 
 .dot.active {
-  background: #777;
-  border-color: #777;
-}
-
-.bullet-list {
-  width: 100%;
-  max-width: 720px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  padding: 20px 24px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-.bullet-list ol {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-left: 20px;
-  margin: 0 0 16px;
-  color: #333;
-  line-height: 1.5;
+  width: 24px;
+  border-radius: 10px;
+  background: #5a45b0;
 }
 
 .cta {
-  display: flex;
-  justify-content: center;
+  margin-top: 20px;
 }
 
 .cta button {
-  padding: 10px 20px;
-  background: #ece4ff;
-  color: #5a45b0;
-  border: 1px solid #d7cfff;
-  border-radius: 6px;
+  padding: 16px 48px;
+  background: #5a45b0;
+  color: white;
+  border: none;
+  border-radius: 12px;
   cursor: pointer;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(90, 69, 176, 0.3);
 }
 
 .cta button:hover {
-  background: #e2d8ff;
+  background: #4a389d;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(90, 69, 176, 0.4);
 }
 
 @media (max-width: 768px) {
-  .hero-image {
-    max-height: none;
-    min-height: 280px;
-  }
-
-  .hero-track {
-    gap: 8px;
-    grid-auto-columns: unset;
-  }
+  .brand-title { font-size: 32px; }
+  .slide-description { font-size: 24px; }
+  .hero-image { min-height: 350px; }
+  .cta button { padding: 14px 36px; font-size: 16px; }
 }
 </style>

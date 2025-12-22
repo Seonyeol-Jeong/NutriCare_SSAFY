@@ -2,34 +2,35 @@ package com.nutricare.config.security;
 
 import org.springframework.stereotype.Component;
 import com.nutricare.controller.DietRecommendationController.CreateRequest;
+import com.nutricare.model.dao.AnalysisResultDao;
+import com.nutricare.model.dao.DietContextDao;
 import com.nutricare.model.dao.DietResultDao;
+import com.nutricare.model.dao.PhotoDao;
 import com.nutricare.model.dto.AnalysisResult;
 import com.nutricare.model.dto.DietContext;
-import com.nutricare.model.dto.DietRecommendation;
 import com.nutricare.model.dto.DietResult;
 import com.nutricare.model.dto.Photo;
 import com.nutricare.model.service.AnalysisResultService;
 import com.nutricare.model.service.DietContextService;
 import com.nutricare.model.service.DietRecommendationService;
-import com.nutricare.model.service.DietResultService;
 import com.nutricare.model.service.PhotoService;
 
 @Component
 public class DietSecurity {
 
-    private final DietContextService dietContextService;
-    private final PhotoService photoService;
-    private final AnalysisResultService analysisResultService;
+    private final DietContextDao dietContextDao;
+    private final PhotoDao photoDao;
+    private final AnalysisResultDao analysisResultDao;
     private final DietResultDao dietResultDao;
 
-    public DietSecurity(DietContextService dietContextService, 
-    		PhotoService photoService, 
+    public DietSecurity(DietContextDao dietContextDao, 
+    		PhotoDao photoDao, 
     		AnalysisResultService analysisResultService,
     		DietResultDao dietResultDao,
-    		DietRecommendationService dietRecommendationService) {
-        this.dietContextService = dietContextService;
-        this.photoService = photoService;
-        this.analysisResultService = analysisResultService;
+    		AnalysisResultDao analysisResultDao) {
+        this.dietContextDao = dietContextDao;
+        this.photoDao = photoDao;
+        this.analysisResultDao = analysisResultDao;
         this.dietResultDao = dietResultDao;
     }
 
@@ -43,14 +44,14 @@ public class DietSecurity {
         
         // PhotoId가 있으면 사진 주인 확인
         if (request.getPhotoId() != null) {
-            Photo photo = photoService.selectOne(request.getPhotoId());
+            Photo photo = photoDao.selectOne(request.getPhotoId());
             if (photo != null) ownerId = photo.getUserId();
         } 
         // AnalysisId가 있으면 분석 결과 주인 확인
         else if (request.getAnalysisId() != null) {
-            AnalysisResult ar = analysisResultService.getById(request.getAnalysisId());
+            AnalysisResult ar = analysisResultDao.selectById(request.getAnalysisId());
             if (ar != null) {
-                 Photo photo = photoService.selectOne(ar.getPhotoId());
+                 Photo photo = photoDao.selectOne(ar.getPhotoId());
                  if (photo != null) ownerId = photo.getUserId();
             }
         }
@@ -64,7 +65,7 @@ public class DietSecurity {
         if (userDetails == null) return false;
         if ("ADMIN".equals(userDetails.getUser().getRole())) return true;
 
-        DietContext context = dietContextService.getContextForRec(recId);
+        DietContext context = dietContextDao.findDietContextByRecId(recId);
         return context != null && context.getUserId().equals(userDetails.getUser().getUserId());
     }
     
@@ -72,7 +73,7 @@ public class DietSecurity {
         if (userDetails == null) return false;
         if ("ADMIN".equals(userDetails.getUser().getRole())) return true;
         
-        Photo photo = photoService.selectOne(photoId);
+        Photo photo = photoDao.selectOne(photoId);
         
         if (photo == null) return false;
         
@@ -83,9 +84,9 @@ public class DietSecurity {
         if (userDetails == null) return false;
         if ("ADMIN".equals(userDetails.getUser().getRole())) return true;
         
-        AnalysisResult analysisResult = analysisResultService.getById(analysisId);
+        AnalysisResult analysisResult = analysisResultDao.selectById(analysisId);
         if (analysisResult == null) return false;
-        Photo photo = photoService.selectOne(analysisResult.getPhotoId());
+        Photo photo = photoDao.selectOne(analysisResult.getPhotoId());
         if (photo == null) return false;
         
         return userDetails.getUser().getUserId().equals(photo.getUserId());

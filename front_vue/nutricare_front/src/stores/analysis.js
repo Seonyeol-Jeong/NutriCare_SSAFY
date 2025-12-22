@@ -140,15 +140,12 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   async function createAndFetchDietRecommendation({ analysisId, memo }) {
-    console.log("[createAndFetchDietRecommendation] 시작 analysisId:", analysisId);
     diet_loading.value = true
     diet_error.value = null
     try {
       // 1. 식단 추천 생성 요청 (recId 받기)
-      console.log("[createAndFetchDietRecommendation] 1. 추천 헤더 생성 요청 (/create)...");
       const createResponse = await axios.post('/diet-recommendations/create', { analysisId, memo })
       const recId = createResponse.data?.recId
-      console.log("[createAndFetchDietRecommendation] 1. 완료. recId:", recId);
 
       if (!recId) {
         throw new Error("recId를 응답에서 찾을 수 없습니다.")
@@ -157,15 +154,11 @@ export const useAnalysisStore = defineStore('analysis', () => {
       // 2. AI 식단 생성 요청 (POST /diet-recommendations/{recId})
       // 이것이 없으면 식단이 생성되지 않고 빈 리스트만 조회됩니다.
       // AI 생성은 시간이 오래 걸릴 수 있으므로 타임아웃을 60초로 개별 설정합니다.
-      console.log(`[createAndFetchDietRecommendation] 2. AI 식단 생성 요청 (POST /diet-recommendations/${recId})...`);
       await axios.post(`/diet-recommendations/${recId}`, null, { timeout: 60000 })
-      console.log("[createAndFetchDietRecommendation] 2. AI 식단 생성 완료");
 
       // 3. 받은 recId로 상세 식단 목록 조회
       // fetchDietRecommendationById 액션을 직접 호출하여 로직 재사용
-      console.log("[createAndFetchDietRecommendation] 3. 식단 목록 조회 요청...");
       await fetchDietRecommendationById(recId)
-      console.log("[createAndFetchDietRecommendation] 3. 식단 목록 조회 완료");
 
     } catch (e) {
       console.error('식단 추천 생성 또는 조회 실패:', e)

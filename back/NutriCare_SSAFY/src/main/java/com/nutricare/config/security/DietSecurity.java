@@ -2,10 +2,7 @@ package com.nutricare.config.security;
 
 import org.springframework.stereotype.Component;
 import com.nutricare.controller.DietRecommendationController.CreateRequest;
-import com.nutricare.model.dao.AnalysisResultDao;
-import com.nutricare.model.dao.DietContextDao;
 import com.nutricare.model.dao.DietResultDao;
-import com.nutricare.model.dao.PhotoDao;
 import com.nutricare.model.dto.AnalysisResult;
 import com.nutricare.model.dto.DietContext;
 import com.nutricare.model.dto.DietRecommendation;
@@ -20,19 +17,19 @@ import com.nutricare.model.service.PhotoService;
 @Component
 public class DietSecurity {
 
-    private final DietContextDao dietContextDao;
-    private final PhotoDao photoDao;
-    private final AnalysisResultDao analysisResultDao;
+    private final DietContextService dietContextService;
+    private final PhotoService photoService;
+    private final AnalysisResultService analysisResultService;
     private final DietResultDao dietResultDao;
 
-    public DietSecurity(DietContextDao dietContextDao, 
-    		PhotoDao photoDao, 
-    		AnalysisResultDao analysisResultDao,
+    public DietSecurity(DietContextService dietContextService, 
+    		PhotoService photoService, 
+    		AnalysisResultService analysisResultService,
     		DietResultDao dietResultDao,
     		DietRecommendationService dietRecommendationService) {
-        this.dietContextDao = dietContextDao;
-        this.photoDao = photoDao;
-        this.analysisResultDao = analysisResultDao;
+        this.dietContextService = dietContextService;
+        this.photoService = photoService;
+        this.analysisResultService = analysisResultService;
         this.dietResultDao = dietResultDao;
     }
 
@@ -46,14 +43,14 @@ public class DietSecurity {
         
         // PhotoId가 있으면 사진 주인 확인
         if (request.getPhotoId() != null) {
-            Photo photo = photoDao.selectOne(request.getPhotoId());
+            Photo photo = photoService.selectOne(request.getPhotoId());
             if (photo != null) ownerId = photo.getUserId();
         } 
         // AnalysisId가 있으면 분석 결과 주인 확인
         else if (request.getAnalysisId() != null) {
-            AnalysisResult ar = analysisResultDao.selectById(request.getAnalysisId());
+            AnalysisResult ar = analysisResultService.getById(request.getAnalysisId());
             if (ar != null) {
-                 Photo photo = photoDao.selectOne(ar.getPhotoId());
+                 Photo photo = photoService.selectOne(ar.getPhotoId());
                  if (photo != null) ownerId = photo.getUserId();
             }
         }
@@ -67,7 +64,7 @@ public class DietSecurity {
         if (userDetails == null) return false;
         if ("ADMIN".equals(userDetails.getUser().getRole())) return true;
 
-        DietContext context = dietContextDao.findDietContextByRecId(recId);
+        DietContext context = dietContextService.getContextForRec(recId);
         return context != null && context.getUserId().equals(userDetails.getUser().getUserId());
     }
     
@@ -75,7 +72,7 @@ public class DietSecurity {
         if (userDetails == null) return false;
         if ("ADMIN".equals(userDetails.getUser().getRole())) return true;
         
-        Photo photo = photoDao.selectOne(photoId);
+        Photo photo = photoService.selectOne(photoId);
         
         if (photo == null) return false;
         
@@ -86,9 +83,9 @@ public class DietSecurity {
         if (userDetails == null) return false;
         if ("ADMIN".equals(userDetails.getUser().getRole())) return true;
         
-        AnalysisResult analysisResult = analysisResultDao.selectById(analysisId);
+        AnalysisResult analysisResult = analysisResultService.getById(analysisId);
         if (analysisResult == null) return false;
-        Photo photo = photoDao.selectOne(analysisResult.getPhotoId());
+        Photo photo = photoService.selectOne(analysisResult.getPhotoId());
         if (photo == null) return false;
         
         return userDetails.getUser().getUserId().equals(photo.getUserId());

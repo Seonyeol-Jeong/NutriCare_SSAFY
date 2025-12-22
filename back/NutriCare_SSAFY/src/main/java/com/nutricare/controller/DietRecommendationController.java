@@ -111,7 +111,6 @@ public class DietRecommendationController {
 
             // 2) 건강 프로필이 있으면 칼로리 플랜 계산 (없으면 null 전달)
             HealthProfile hp = healthProfileService.getHealthProfile(context.getUserId());
-            
             CalorieCalculator.CaloriePlan plan = null;
             if (hp != null) {
                 Integer ageYears = (context.getBirthYear() != null)
@@ -223,6 +222,7 @@ public class DietRecommendationController {
     // ===========================
     // Helper Method (권한 검사)
     // ===========================
+
 
     private void checkAuthorityByRecId(Long recId, CustomUserDetails userDetails) {
         DietContext context = dietContextService.getContextForRec(recId);

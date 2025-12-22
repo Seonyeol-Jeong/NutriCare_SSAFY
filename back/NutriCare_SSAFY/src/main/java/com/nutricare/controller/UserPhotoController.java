@@ -121,7 +121,7 @@ public class UserPhotoController {
             // 2. Photo 메타데이터 DB 저장
             Photo photo = new Photo(userId, fileUrl);
             photoService.insert(photo);
-            System.out.println(">>> 생성된 Photo ID: " + photo.getPhotoId());
+
             // 3. AI 분석 요청 및 결과 저장
             String diagnosis = null;
             try {

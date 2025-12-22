@@ -2,6 +2,7 @@ import io
 import json
 import os
 import re
+import logging
 from pathlib import Path
 from typing import List, Optional
 
@@ -16,10 +17,19 @@ from PIL import Image
 # QLoRA adapter 경로/베이스 모델은 env로 덮어쓸 수 있습니다.
 _ROOT_DIR = Path(__file__).resolve().parents[1]  # AI 디렉터리
 BASE_MODEL = os.environ.get("DIET_BASE_MODEL", "Qwen/Qwen3-VL-8B-Instruct")
-ADAPTER_PATH = Path(os.environ.get("DIET_ADAPTER_PATH", _ROOT_DIR / "notebooks" / "qlora-adapter"))
+ADAPTER_PATH = Path(os.environ.get("DIET_ADAPTER_PATH", "../notebooks/qlora-adapter"))
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("diet_api")
 
 
-class DietContextModel(BaseModel):
+class _RequestModel(BaseModel):
+    class Config:
+        # 스네이크 케이스 <-> 카멜 케이스 자동 변환
+        validate_by_name = True
+
+
+class DietContextModel(_RequestModel):
     user_id: Optional[int] = Field(None, alias="userId")
     user_name: Optional[str] = Field(None, alias="userName")
     birth_year: Optional[int] = Field(None, alias="birthYear")
@@ -38,7 +48,7 @@ class DietContextModel(BaseModel):
     rec_created_at: Optional[str] = Field(None, alias="recCreatedAt")
 
 
-class CaloriePlanModel(BaseModel):
+class CaloriePlanModel(_RequestModel):
     bmr: Optional[int] = None
     tdee: Optional[int] = None
     target_calories: Optional[int] = Field(None, alias="targetCalories")
@@ -57,7 +67,7 @@ class DietItem(BaseModel):
     skincareUrl: Optional[str] = None
 
 
-class DietLlmRequest(BaseModel):
+class DietLlmRequest(_RequestModel):
     context: DietContextModel
     caloriePlan: Optional[CaloriePlanModel] = None
     rulesText: Optional[str] = None
@@ -120,6 +130,16 @@ def _load_model_once():
     model.eval()
 
     _MODEL, _PROCESSOR = model, processor
+
+    lora_params = [
+    n for n, p in model.named_parameters()
+    if "lora" in n.lower()
+    ]
+
+    if not lora_params:
+        raise RuntimeError("LoRA 파라미터가 없음")
+
+    print(f"[OK] LoRA params loaded: {len(lora_params)}")
     return _MODEL, _PROCESSOR
 
 
@@ -141,7 +161,7 @@ def _build_messages(ctx: DietContextModel, plan: Optional[CaloriePlanModel], rul
 
 def _extract_json(text: str):
     """모델 출력에서 JSON 배열 블록을 추출."""
-    match = re.search(r"(\\[[\\s\\S]*\\])", text)
+    match = re.search(r"(\[[\s\S]*\])", text)
     if not match:
         raise ValueError("no JSON array found in generation")
     block = match.group(1)
@@ -149,10 +169,16 @@ def _extract_json(text: str):
 
 
 @app.post("/diet/generate", summary="이미지+컨텍스트로 식단 JSON 생성")
-def diet_generate(body: DietLlmRequest) -> List[DietItem]:
+def diet_generate(body: DietLlmRequest) -> List[DietResult]:
     """
     Qwen3-VL QLoRA 어댑터로 식단을 생성하고 DietItem 리스트를 반환.
     """
+    logger.info(
+        "diet_generate request received: user_id=%s rec_id=%s photo_url=%s",
+        body.context.user_id,
+        body.context.rec_id,
+        body.context.photo_url,
+    )
     if not body.context.rec_id:
         raise HTTPException(status_code=400, detail="rec_id (diet_recommendation.rec_id) is required")
 
@@ -188,9 +214,22 @@ def diet_generate(body: DietLlmRequest) -> List[DietItem]:
                 max_new_tokens=512,
                 do_sample=False,
             )
-        decoded = processor.tokenizer.decode(outputs[0], skip_special_tokens=False)
+        generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
+        decoded = processor.tokenizer.decode(generated_ids, skip_special_tokens=True)
+        logger.info("model decoded output length=%s", len(decoded))
+        logger.info("model decoded output head=%s", decoded[:500])
         parsed = _extract_json(decoded)
         items = [DietItem(**item) for item in parsed]
+        seen_names = set()
+        deduped_items = []
+        for item in items:
+            key = item.menuName.strip().lower()
+            if key in seen_names:
+                continue
+            seen_names.add(key)
+            deduped_items.append(item)
+        items = deduped_items
+        logger.info("parsed diet items count=%s", len(items))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"생성/파싱 실패: {exc}")
 

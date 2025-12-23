@@ -68,8 +68,12 @@ CREATE TABLE `analysis_result` (
   `analysis_id`    BIGINT       NOT NULL AUTO_INCREMENT,
   `photo_id`       BIGINT       NOT NULL,
   `diagnosis_name` VARCHAR(50)  NOT NULL,         -- top-1 라벨
-  `probabilities`  JSON         NOT NULL,         -- 클래스별 확률 (class_names 인덱스와 정렬)
-  `top_k`          JSON         NULL,             -- 선택: [{index,name,prob}, ...]
+  `prob_gunsun`    DECIMAL(5,4) NOT NULL,         -- 건선 확률
+  `prob_atopy`     DECIMAL(5,4) NOT NULL,         -- 아토피 확률
+  `prob_acne`      DECIMAL(5,4) NOT NULL,         -- 여드름 확률
+  `prob_normal`    DECIMAL(5,4) NOT NULL,         -- 정상 확률
+  `prob_rosacea`   DECIMAL(5,4) NOT NULL,         -- 주사 확률
+  `prob_seborr`    DECIMAL(5,4) NOT NULL,         -- 지루 확률
   `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`analysis_id`),
   KEY `idx_analysis_photo` (`photo_id`),

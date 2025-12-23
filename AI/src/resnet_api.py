@@ -1,34 +1,70 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import logging
 
-from resnet_mlflow import predict_image, _load_image_from_url_or_path, CLASS_NAMES, DEFAULT_MODEL_URI
-
+from resnet_mlflow import predict_image, _load_image_from_url_or_path, CLASS_NAMES
 
 class PredictRequest(BaseModel):
     photo_id: int
     user_id: int
-    photo_url: str  # 로컬 경로 또는 http/https URL
+    photo_url: str
 
-CLASS_NAMES = ["건선", "아토피", "여드름", "정상", "주사", "지루"]
+app = FastAPI(title="ResNet18 Inference (MLflow)", version="1.0")
 
-app = FastAPI(title="ResNet18 Inference (MLflow)", version="1.0") 
+logger = logging.getLogger("uvicorn.error")
+if not logger.handlers:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+logger.setLevel(logging.INFO)
 
-
-@app.post("/analyze", summary="예측 결과 반환")
+@app.post("/analyze", summary="Return prediction")
 def predict_endpoint(body: PredictRequest):
-    """입력 JSON({photo_id,user_id,photo_url})을 받아 추론 후 결과(JSON)를 반환한다."""
+    logger.info("Predict request received photo_id=%s user_id=%s", body.photo_id, body.user_id)
+    logger.info("Loading image from %s", body.photo_url)
     try:
         local_path = _load_image_from_url_or_path(body.photo_url)
-        # CLASS_NAMES는 AI/data/train 하위 폴더명을 자동 로드한 값
-        pred, probs = predict_image(local_path, class_names=CLASS_NAMES)
+        logger.info("Image loaded local_path=%s", local_path)
+        logger.info("Running inference")
+        pred_label, probs = predict_image(local_path, class_names=CLASS_NAMES)
+        logger.info("Inference complete pred=%s", pred_label)
+        probs_list = probs.tolist()
+        class_names = CLASS_NAMES or [str(i) for i in range(len(probs_list))]
+        if CLASS_NAMES is None:
+            logger.info("CLASS_NAMES not set; fallback to index labels")
+        logger.info(
+            "Class probabilities=%s",
+            {name: float(probs_list[i]) for i, name in enumerate(class_names)},
+        )
+        print("Class probabilities:", {name: float(probs_list[i]) for i, name in enumerate(class_names)})
     except FileNotFoundError as exc:
+        logger.warning("Image not found: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"예상치 못한 오류: {exc}")
+        logger.exception("Unexpected inference error")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {exc}")
 
-    # analysis_id는 DB AUTO_INCREMENT로 생성되므로 여기서는 None 반환
-    return {
+    if "probs_list" not in locals():
+        probs_list = probs.tolist()
+        class_names = CLASS_NAMES or [str(i) for i in range(len(probs_list))]
+        if CLASS_NAMES is None:
+            logger.info("CLASS_NAMES not set; fallback to index labels")
+
+    prob_map = {
+        "prob_gunsun": float(probs_list[0]) if len(probs_list) > 0 else None,
+        "prob_atopy": float(probs_list[1]) if len(probs_list) > 1 else None,
+        "prob_acne": float(probs_list[2]) if len(probs_list) > 2 else None,
+        "prob_normal": float(probs_list[3]) if len(probs_list) > 3 else None,
+        "prob_rosacea": float(probs_list[4]) if len(probs_list) > 4 else None,
+        "prob_seborr": float(probs_list[5]) if len(probs_list) > 5 else None,
+    }
+    response_payload = {
         "analysis_id": None,
         "photo_id": body.photo_id,
-        "diagnosis_name": str(pred),
+        "diagnosis_name": str(pred_label),
+        **prob_map,
+        "class_names": class_names,
     }
+    logger.info("Returning 응답 payload=%s", response_payload)
+    return response_payload

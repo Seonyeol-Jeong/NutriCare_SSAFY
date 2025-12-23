@@ -3,64 +3,75 @@
     <div v-if="loading" class="loading-msg">분석 결과를 불러오는 중입니다...</div>
     
     <div v-else class="result-container">
-      <div class="result-visual">
-        <img v-if="user_photo.photoUrl" :src="user_photo.photoUrl" alt="업로드한 사진" class="uploaded-img" />
-        <div v-else class="photo-placeholder">사진을 불러올 수 없습니다.</div>
-      </div>
+      <div class="analysis-top-row">
+        <div class="result-visual">
+          <img v-if="user_photo.photoUrl" :src="user_photo.photoUrl" alt="업로드한 사진" class="uploaded-img" />
+          <div v-else class="photo-placeholder">사진을 불러올 수 없습니다.</div>
+        </div>
 
-      <div class="diagnosis-box">
-        <p class="label">AI 진단 결과</p>
-        <!-- diagnosisName이 없으면 diagnosis_name 확인 (DTO 매핑 대응) -->
-        <h2 class="diagnosis-name" v-if="user_analysis_result.diagnosisName || user_analysis_result.diagnosis_name">
-          "{{ user_analysis_result.diagnosisName || user_analysis_result.diagnosis_name }}"
-        </h2>
-        <p class="diagnosis-name" v-else>
-          진단 결과가 없습니다.
-        </p>
-      </div>
+        <div class="analysis-details">
+          <div class="diagnosis-box">
+            <p class="label">AI 진단 결과</p>
+            <!-- diagnosisName이 없으면 diagnosis_name 확인 (DTO 매핑 대응) -->
+            <h2 class="diagnosis-name" v-if="user_analysis_result.diagnosisName || user_analysis_result.diagnosis_name">
+              "{{ user_analysis_result.diagnosisName || user_analysis_result.diagnosis_name }}"
+            </h2>
+            <p class="diagnosis-name" v-else>
+              진단 결과가 없습니다.
+            </p>
+            <p class="disclaimer">* 이 결과는 참고용이며, 정확한 진단은 전문의와 상담하세요.</p>
+          </div>
 
-      <!-- 확률 분포 차트 -->
-      <div class="probabilities-container" v-if="hasProbabilities">
-        <h3>상세 분석 결과</h3>
-        <ul class="prob-list">
-          <li v-for="item in sortedProbabilities" :key="item.key" class="prob-item">
-            <div class="prob-header">
-              <span class="prob-label">{{ item.label }}</span>
-              <span class="prob-value">{{ (item.value * 100).toFixed(1) }}%</span>
-            </div>
-            <div class="progress-bg">
-              <div class="progress-fill" :style="{ width: `${item.value * 100}%`, backgroundColor: item.color }"></div>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- 질환 정보 가이드 (추가) -->
-      <section class="disease-guide" v-if="currentDiseaseData">
-        <h3>📖 질환 백과: {{ currentDiseaseData.title }}</h3>
-        <div class="guide-content">
-          <div class="guide-item">
-            <h4>정의</h4>
-            <p>{{ currentDiseaseData.definition }}</p>
-          </div>
-          <div class="guide-item">
-            <h4>주요 증상</h4>
-            <p>{{ currentDiseaseData.symptoms }}</p>
-          </div>
-          <div class="guide-item">
-            <h4>원인</h4>
-            <p>{{ currentDiseaseData.causes }}</p>
-          </div>
-          <div class="guide-item highlight">
-            <h4>치료 및 관리</h4>
-            <ul>
-              <li v-for="(line, idx) in currentDiseaseData.care" :key="idx">
-                {{ line }}
+          <!-- 확률 분포 차트 -->
+          <div class="probabilities-container" v-if="hasProbabilities">
+            <h3>상세 분석 결과</h3>
+            <ul class="prob-list">
+              <li v-for="item in sortedProbabilities" :key="item.key" class="prob-item">
+                <div class="prob-header">
+                  <span class="prob-label">{{ item.label }}</span>
+                  <span class="prob-value">{{ (item.value * 100).toFixed(1) }}%</span>
+                </div>
+                <div class="progress-bg">
+                  <div class="progress-fill" :style="{ width: `${item.value * 100}%`, backgroundColor: item.color }"></div>
+                </div>
               </li>
             </ul>
           </div>
-          <div class="source-info">출처: 서울아산병원</div>
         </div>
+      </div>
+
+      <!-- 질환 정보 가이드 (펼치기/접기 적용) -->
+      <section class="disease-guide" v-if="currentDiseaseData">
+        <div class="guide-header" @click="toggleGuide" :class="{ 'is-open': showGuide }">
+          <h3>📖 질환 백과: {{ currentDiseaseData.title }}</h3>
+          <span class="toggle-icon">{{ showGuide ? '▲ 접기' : '▼ 펼쳐서 보기' }}</span>
+        </div>
+        
+        <transition name="fade-slide">
+          <div class="guide-content" v-if="showGuide">
+            <div class="guide-item">
+              <h4>정의</h4>
+              <p>{{ currentDiseaseData.definition }}</p>
+            </div>
+            <div class="guide-item">
+              <h4>주요 증상</h4>
+              <p>{{ currentDiseaseData.symptoms }}</p>
+            </div>
+            <div class="guide-item">
+              <h4>원인</h4>
+              <p>{{ currentDiseaseData.causes }}</p>
+            </div>
+            <div class="guide-item highlight">
+              <h4>치료 및 관리</h4>
+              <ul>
+                <li v-for="(line, idx) in currentDiseaseData.care" :key="idx">
+                  {{ line }}
+                </li>
+              </ul>
+            </div>
+            <div class="source-info">출처: 서울아산병원</div>
+          </div>
+        </transition>
       </section>
 
       <div class="actions">
@@ -90,6 +101,11 @@ const userStore = useUserStore() // user store 인스턴스 생성
 // 스토어 상태를 반응형으로 가져옴
 const { user_analysis_result, user_photo } = storeToRefs(analysisStore)
 const loading = ref(true)
+const showGuide = ref(false) // 가이드 표시 여부 상태 추가
+
+function toggleGuide() {
+  showGuide.value = !showGuide.value
+}
 
 // URL 파라미터에서 ID 가져오기 (router/index.js의 path: 'result/:resultId' 참고)
 // 여기서 resultId는 실제로는 photoId 역할을 합니다.
@@ -250,20 +266,38 @@ function goMyAnalysisList() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 30px;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.analysis-top-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 40px;
   width: 100%;
 }
 
 .result-visual {
-  width: min(420px, 90vw);
-  aspect-ratio: 1; /* 정사각형 */
+  flex: 0 0 400px; /* 고정 너비 느낌 */
+  aspect-ratio: 1;
   background: #e0e0e0;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.analysis-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 300px;
 }
 
 .uploaded-img {
@@ -273,59 +307,72 @@ function goMyAnalysisList() {
 }
 
 .diagnosis-box {
-  text-align: center;
+  text-align: left;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .label {
   font-size: 14px;
-  color: #666;
-  margin-bottom: 4px;
+  color: #888;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
 
 .diagnosis-name {
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
+  font-size: 28px;
+  font-weight: 800;
+  color: #6b55c7;
   margin: 0;
+}
+
+.disclaimer {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #e67e22;
+  font-weight: 600;
 }
 
 .actions {
   margin-top: 10px;
-  display: flex; /* 버튼들을 가로로 나열하기 위해 flex 추가 */
-  gap: 10px; /* 버튼들 사이의 간격 */
+  display: flex;
+  gap: 12px;
 }
 
 .primary {
-  padding: 12px 24px;
-  background: #6b55c7; /* 브랜드 컬러 예시 */
+  padding: 14px 28px;
+  background: #6b55c7;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .primary:hover {
   background: #5a45b0;
+  transform: translateY(-2px);
 }
 
-/* Secondary button style */
 .secondary {
-  padding: 12px 24px;
-  background: #f0f0f0; /* 밝은 배경 */
-  color: #333; /* 어두운 텍스트 */
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 14px 28px;
+  background: #fff;
+  color: #555;
+  border: 1px solid #ddd;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .secondary:hover {
-  background: #e0e0e0;
+  background: #f9f9f9;
+  border-color: #bbb;
 }
 
 .loading-msg {
@@ -335,18 +382,17 @@ function goMyAnalysisList() {
 
 .probabilities-container {
   width: 100%;
-  max-width: 500px; /* 400px에서 늘림 */
   background: #fff;
-  padding: 20px;
+  padding: 24px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .probabilities-container h3 {
-  font-size: 16px;
+  font-size: 18px;
   color: #333;
-  margin-bottom: 16px;
-  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 700;
 }
 
 .prob-list {
@@ -355,7 +401,7 @@ function goMyAnalysisList() {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .prob-item {
@@ -365,56 +411,75 @@ function goMyAnalysisList() {
 .prob-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 4px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 15px;
   color: #555;
-  font-weight: 500;
 }
 
 .prob-value {
-  font-weight: 600;
+  font-weight: 700;
   color: #333;
 }
 
 .progress-bg {
   width: 100%;
-  height: 8px;
-  background-color: #eee;
-  border-radius: 4px;
+  height: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 4px;
-  transition: width 0.5s ease-out;
+  border-radius: 5px;
+  transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Disease Guide Style */
 .disease-guide {
   width: 100%;
-  max-width: 800px;
   background: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #efefef;
   border-radius: 16px;
-  padding: 32px;
-  margin-top: 24px;
-  text-align: left;
+  margin-top: 10px;
+  overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
-.disease-guide h3 {
-  font-size: 22px;
+.guide-header {
+  padding: 20px 32px;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.guide-header:hover {
+  background: #fcfaff;
+}
+
+.guide-header h3 {
+  font-size: 20px;
   color: #333;
-  margin-bottom: 24px;
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 12px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.toggle-icon {
+  font-size: 14px;
+  color: #6b55c7;
+  font-weight: 600;
 }
 
 .guide-content {
+  padding: 0 32px 32px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
+  border-top: 1px solid #f8f5ff;
+  padding-top: 24px;
 }
 
 .guide-item h4 {
@@ -456,6 +521,31 @@ function goMyAnalysisList() {
   font-size: 13px;
   color: #aaa;
   margin-top: 12px;
+}
+
+/* Transition */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+@media (max-width: 900px) {
+  .analysis-top-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .result-visual {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 450px;
+  }
 }
 
 @media (max-width: 768px) {

@@ -151,12 +151,13 @@ function onEditPassword() {
 
 <style scoped>
 .profile-page-wrapper {
-  padding: 40px 20px;
+  padding: 24px 0;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   background-color: transparent;
-  min-height: 60vh;
+  min-height: auto;
 }
 
 .unified-profile-card {
@@ -309,18 +310,18 @@ function onEditPassword() {
 @media (max-width: 768px) {
   .unified-profile-card {
     flex-direction: column;
-    max-width: 400px;
+    max-width: 100%;
   }
   
   .profile-side {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #edf2f7;
-    padding: 32px;
+    padding: 32px 20px;
   }
   
   .info-side {
-    padding: 32px;
+    padding: 32px 20px;
   }
   
   .info-row {

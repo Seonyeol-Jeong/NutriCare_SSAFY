@@ -16,6 +16,7 @@
           <span class="info-label">분석 날짜</span>
           <span>{{ user_photo?.createdAt ? new Date(user_photo.createdAt).toLocaleString() : '정보 없음' }}</span>
         </div>
+        <p class="disclaimer">* 이 결과는 참고용이며, 정확한 진단은 전문의와 상담하세요.</p>
 
         <!-- 상세 확률 정보 -->
         <div class="probabilities-chart" v-if="hasProbabilities">
@@ -350,6 +351,13 @@ function formatCount(num) {
   background-color: #eaddff;
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.disclaimer {
+  font-size: 13px;
+  color: #e67e22;
+  font-weight: 600;
+  margin: 4px 0;
 }
 
 .probabilities-chart {

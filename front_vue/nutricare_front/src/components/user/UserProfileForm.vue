@@ -183,12 +183,13 @@ function onLater() {
 <style scoped>
 /* Reuse layout styles from UserDetailForm.vue for consistency */
 .profile-page-wrapper {
-  padding: 40px 20px;
+  padding: 24px 0;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   background-color: transparent;
-  min-height: 60vh;
+  min-height: auto;
 }
 
 .unified-profile-card {
@@ -198,8 +199,12 @@ function onLater() {
   background: white;
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-  overflow: hidden;
+  /* overflow: hidden; removed to prevent shadow clipping if needed, but added back if borders need it. 
+     Actually, overflow: hidden clips the box-shadow if it's on the card itself. 
+     But here the shadow is on .unified-profile-card, so it's outside. */
+  overflow: hidden; 
   border: 1px solid #f0f0f0;
+  margin: 0 auto;
 }
 
 /* Sidebar Profile */
@@ -326,9 +331,7 @@ function onLater() {
 .radio-group {
   display: flex;
   gap: 10px;
-}
-.radio-group.wrap {
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* Ensure all radio groups wrap */
 }
 
 .radio-chip {
@@ -393,18 +396,18 @@ function onLater() {
 @media (max-width: 768px) {
   .unified-profile-card {
     flex-direction: column;
-    max-width: 400px;
+    max-width: 100%;
   }
   
   .profile-side {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #edf2f7;
-    padding: 32px;
+    padding: 32px 20px;
   }
   
   .info-side {
-    padding: 32px;
+    padding: 32px 20px;
   }
   
   .form-grid {

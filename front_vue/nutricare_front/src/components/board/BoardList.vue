@@ -45,7 +45,10 @@
         >
           <div class="card-content">
             <div class="card-header-row">
-              <span class="category-badge">{{ post.category }}</span>
+              <div class="header-left">
+                <span class="post-no">No.{{ post.boardId }}</span>
+                <span class="category-badge">{{ post.category }}</span>
+              </div>
               <span class="date">{{ formatDate(post.createdAt) }}</span>
             </div>
             <h3 class="post-title">{{ post.title }}</h3>
@@ -259,6 +262,21 @@ function goToCreate() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-no {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  background-color: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .category-badge {

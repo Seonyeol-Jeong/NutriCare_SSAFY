@@ -25,6 +25,7 @@ def predict_endpoint(body: PredictRequest):
         logger.info("추론 시작")
         pred_label, probs = predict_image(local_path, class_names=CLASS_NAMES)
         logger.info("추론 완료 pred=%s", pred_label)
+        logger.info("확률 분포(probs)=%s", probs.tolist())
     except FileNotFoundError as exc:
         logger.warning("이미지 찾을 수 없음: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc))

@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import logging
-import numpy as np
 
 from resnet_mlflow import predict_image, _load_image_from_url_or_path, CLASS_NAMES
 
@@ -9,7 +8,6 @@ class PredictRequest(BaseModel):
     photo_id: int
     user_id: int
     photo_url: str
-    top_k: int = 3
 
 app = FastAPI(title="ResNet18 Inference (MLflow)", version="1.0")
 
@@ -53,20 +51,11 @@ def predict_endpoint(body: PredictRequest):
         if CLASS_NAMES is None:
             logger.info("CLASS_NAMES not set; fallback to index labels")
 
-    top_k = max(1, min(body.top_k, len(probs_list)))
-    topk_indices = np.argsort(probs)[::-1][:top_k]
-
-    topk_payload = [
-        {"index": int(i), "name": class_names[i], "prob": float(probs[i])}
-        for i in topk_indices
-    ]
-
     response_payload = {
         "analysis_id": None,
         "photo_id": body.photo_id,
         "diagnosis_name": str(pred_label),
         "probabilities": probs_list,
-        "top_k": topk_payload,
         "class_names": class_names,
     }
     logger.info("Returning 응답 payload=%s", response_payload)

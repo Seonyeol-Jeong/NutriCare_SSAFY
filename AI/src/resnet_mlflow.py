@@ -39,8 +39,8 @@ DEFAULT_MODEL_URI = str(
     _BASE_DIR/"notebooks/mlruns/358423444567344628/d8b7f62c6dd64ce5bc0b3855fcff0991/artifacts/model"
 )
 
-# 클래스 이름을 자동 로드할 기본 경로: AI/data/train
-DEFAULT_CLASS_DIR = _BASE_DIR / "data" / "train"
+# 클래스 이름을 자동 로드할 기본 경로: AI/mixture_data
+DEFAULT_CLASS_DIR = "../mixture_data"
 
 # (model_uri, device.type) -> (model, device)
 _MODEL_CACHE: Dict[Tuple[str, str], Tuple[torch.nn.Module, torch.device]] = {}

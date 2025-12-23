@@ -17,25 +17,25 @@ logger = logging.getLogger(__name__)
 
 @app.post("/analyze", summary="예측 결과 반환")
 def predict_endpoint(body: PredictRequest):
-    logger.info("Predict request received photo_id=%s user_id=%s", body.photo_id, body.user_id)
-    logger.info("Loading image from %s", body.photo_url)
+    logger.info("예측 요청 수신 photo_id=%s user_id=%s", body.photo_id, body.user_id)
+    logger.info("이미지 로드 시작: %s", body.photo_url)
     try:
         local_path = _load_image_from_url_or_path(body.photo_url)
-        logger.info("Image loaded local_path=%s", local_path)
-        logger.info("Running inference")
+        logger.info("이미지 로드 완료 local_path=%s", local_path)
+        logger.info("추론 시작")
         pred_label, probs = predict_image(local_path, class_names=CLASS_NAMES)
-        logger.info("Inference complete pred=%s", pred_label)
+        logger.info("추론 완료 pred=%s", pred_label)
     except FileNotFoundError as exc:
-        logger.warning("Image not found: %s", exc)
+        logger.warning("이미지 찾을 수 없음: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
-        logger.exception("Unexpected inference error")
+        logger.exception("예상치 못한 추론 오류")
         raise HTTPException(status_code=500, detail=f"예상치 못한 오류: {exc}")
 
     probs_list = probs.tolist()
     class_names = CLASS_NAMES or [str(i) for i in range(len(probs_list))]
     if CLASS_NAMES is None:
-        logger.info("CLASS_NAMES is not set; falling back to index labels")
+        logger.info("CLASS_NAMES 미설정: 인덱스 라벨로 대체")
     top_k = max(1, min(body.top_k, len(probs_list)))
     topk_indices = np.argsort(probs)[::-1][:top_k]
 
@@ -44,7 +44,7 @@ def predict_endpoint(body: PredictRequest):
         for i in topk_indices
     ]
 
-    logger.info("Returning prediction response")
+    logger.info("예측 응답 반환")
     return {
         "analysis_id": None,
         "photo_id": body.photo_id,

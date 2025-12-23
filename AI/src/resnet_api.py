@@ -1,34 +1,52 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import logging
+import numpy as np
 
-from resnet_mlflow import predict_image, _load_image_from_url_or_path, CLASS_NAMES, DEFAULT_MODEL_URI
-
+from resnet_mlflow import predict_image, _load_image_from_url_or_path, CLASS_NAMES
 
 class PredictRequest(BaseModel):
     photo_id: int
     user_id: int
-    photo_url: str  # 로컬 경로 또는 http/https URL
+    photo_url: str
+    top_k: int = 3
 
-CLASS_NAMES = ["건선", "아토피", "여드름", "정상", "주사", "지루"]
+app = FastAPI(title="ResNet18 Inference (MLflow)", version="1.0")
 
-app = FastAPI(title="ResNet18 Inference (MLflow)", version="1.0") 
-
+logger = logging.getLogger(__name__)
 
 @app.post("/analyze", summary="예측 결과 반환")
 def predict_endpoint(body: PredictRequest):
-    """입력 JSON({photo_id,user_id,photo_url})을 받아 추론 후 결과(JSON)를 반환한다."""
+    logger.info("Predict request received photo_id=%s user_id=%s", body.photo_id, body.user_id)
+    logger.info("Loading image from %s", body.photo_url)
     try:
         local_path = _load_image_from_url_or_path(body.photo_url)
-        # CLASS_NAMES는 AI/data/train 하위 폴더명을 자동 로드한 값
-        pred, probs = predict_image(local_path, class_names=CLASS_NAMES)
+        logger.info("Image loaded local_path=%s", local_path)
+        logger.info("Running inference")
+        pred_label, probs = predict_image(local_path, class_names=CLASS_NAMES)
+        logger.info("Inference complete pred=%s", pred_label)
     except FileNotFoundError as exc:
+        logger.warning("Image not found: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
+        logger.exception("Unexpected inference error")
         raise HTTPException(status_code=500, detail=f"예상치 못한 오류: {exc}")
 
-    # analysis_id는 DB AUTO_INCREMENT로 생성되므로 여기서는 None 반환
+    probs_list = probs.tolist()
+    top_k = max(1, min(body.top_k, len(probs_list)))
+    topk_indices = np.argsort(probs)[::-1][:top_k]
+
+    topk_payload = [
+        {"index": int(i), "name": CLASS_NAMES[i], "prob": float(probs[i])}
+        for i in topk_indices
+    ]
+
+    logger.info("Returning prediction response")
     return {
         "analysis_id": None,
         "photo_id": body.photo_id,
-        "diagnosis_name": str(pred),
+        "diagnosis_name": str(pred_label),
+        "probabilities": probs_list,
+        "top_k": topk_payload,
+        "class_names": CLASS_NAMES,
     }

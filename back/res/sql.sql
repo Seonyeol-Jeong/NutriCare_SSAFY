@@ -1,4 +1,4 @@
--- 25.12.21 수정
+-- 25.12.23 수정
 -- 데이터베이스 생성 및 선택
 DROP DATABASE IF EXISTS nutricare_db;
 CREATE DATABASE nutricare_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
@@ -67,7 +67,9 @@ CREATE TABLE `photo` (
 CREATE TABLE `analysis_result` (
   `analysis_id`    BIGINT       NOT NULL AUTO_INCREMENT,
   `photo_id`       BIGINT       NOT NULL,
-  `diagnosis_name` VARCHAR(50)  NOT NULL,         -- {'건선': 0, '아토피': 1, '여드름': 2, '정상': 3, '주사': 4, '지루': 5}
+  `diagnosis_name` VARCHAR(50)  NOT NULL,         -- top-1 라벨
+  `probabilities`  JSON         NOT NULL,         -- 클래스별 확률 (class_names 인덱스와 정렬)
+  `top_k`          JSON         NULL,             -- 선택: [{index,name,prob}, ...]
   `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`analysis_id`),
   KEY `idx_analysis_photo` (`photo_id`),
@@ -77,6 +79,7 @@ CREATE TABLE `analysis_result` (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 ------------------------------------------------------------
 -- 5) DIET_RECOMMENDATION: 식단 추천 헤더

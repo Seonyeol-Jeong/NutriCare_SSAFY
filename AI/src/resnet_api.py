@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import json
 import logging
 
 from resnet_mlflow import predict_image, _load_image_from_url_or_path, CLASS_NAMES
@@ -31,7 +30,6 @@ def predict_endpoint(body: PredictRequest):
         pred_label, probs = predict_image(local_path, class_names=CLASS_NAMES)
         logger.info("Inference complete pred=%s", pred_label)
         probs_list = probs.tolist()
-        probabilities_str = json.dumps(probs_list)
         class_names = CLASS_NAMES or [str(i) for i in range(len(probs_list))]
         if CLASS_NAMES is None:
             logger.info("CLASS_NAMES not set; fallback to index labels")
@@ -40,7 +38,6 @@ def predict_endpoint(body: PredictRequest):
             {name: float(probs_list[i]) for i, name in enumerate(class_names)},
         )
         print("Class probabilities:", {name: float(probs_list[i]) for i, name in enumerate(class_names)})
-        logger.info("Probabilities JSON string=%s", probabilities_str)
     except FileNotFoundError as exc:
         logger.warning("Image not found: %s", exc)
         raise HTTPException(status_code=400, detail=str(exc))
@@ -50,16 +47,23 @@ def predict_endpoint(body: PredictRequest):
 
     if "probs_list" not in locals():
         probs_list = probs.tolist()
-        probabilities_str = json.dumps(probs_list)
         class_names = CLASS_NAMES or [str(i) for i in range(len(probs_list))]
         if CLASS_NAMES is None:
             logger.info("CLASS_NAMES not set; fallback to index labels")
 
+    prob_map = {
+        "prob_gunsun": float(probs_list[0]) if len(probs_list) > 0 else None,
+        "prob_atopy": float(probs_list[1]) if len(probs_list) > 1 else None,
+        "prob_acne": float(probs_list[2]) if len(probs_list) > 2 else None,
+        "prob_normal": float(probs_list[3]) if len(probs_list) > 3 else None,
+        "prob_rosacea": float(probs_list[4]) if len(probs_list) > 4 else None,
+        "prob_seborr": float(probs_list[5]) if len(probs_list) > 5 else None,
+    }
     response_payload = {
         "analysis_id": None,
         "photo_id": body.photo_id,
         "diagnosis_name": str(pred_label),
-        "probabilities": probabilities_str,
+        **prob_map,
         "class_names": class_names,
     }
     logger.info("Returning 응답 payload=%s", response_payload)

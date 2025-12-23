@@ -33,11 +33,14 @@ def predict_endpoint(body: PredictRequest):
         raise HTTPException(status_code=500, detail=f"예상치 못한 오류: {exc}")
 
     probs_list = probs.tolist()
+    class_names = CLASS_NAMES or [str(i) for i in range(len(probs_list))]
+    if CLASS_NAMES is None:
+        logger.info("CLASS_NAMES is not set; falling back to index labels")
     top_k = max(1, min(body.top_k, len(probs_list)))
     topk_indices = np.argsort(probs)[::-1][:top_k]
 
     topk_payload = [
-        {"index": int(i), "name": CLASS_NAMES[i], "prob": float(probs[i])}
+        {"index": int(i), "name": class_names[i], "prob": float(probs[i])}
         for i in topk_indices
     ]
 
@@ -48,5 +51,5 @@ def predict_endpoint(body: PredictRequest):
         "diagnosis_name": str(pred_label),
         "probabilities": probs_list,
         "top_k": topk_payload,
-        "class_names": CLASS_NAMES,
+        "class_names": class_names,
     }

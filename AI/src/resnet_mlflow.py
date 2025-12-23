@@ -40,7 +40,7 @@ DEFAULT_MODEL_URI = str(
 )
 
 # 클래스 이름을 자동 로드할 기본 경로: AI/data/train
-DEFAULT_CLASS_DIR = _BASE_DIR / "data" / "train"
+DEFAULT_CLASS_DIR = "../data/train"
 
 # (model_uri, device.type) -> (model, device)
 _MODEL_CACHE: Dict[Tuple[str, str], Tuple[torch.nn.Module, torch.device]] = {}

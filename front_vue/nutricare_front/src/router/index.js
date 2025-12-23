@@ -11,6 +11,7 @@ import AnalysisUploadView from '@/views/analysis/AnalysisUploadView.vue'
 import AnalysisResultView from '@/views/analysis/AnalysisResultView.vue'
 import AnalysisListView from '@/views/analysis/AnalysisListView.vue'
 import AnalysisDetailView from '@/views/analysis/AnalysisDetailView.vue'
+import AnalysisDateView from '@/views/analysis/AnalysisDateView.vue'
 import MyPageView from '@/views/user/MyPageView.vue'
 import UserJoinView from '@/views/user/UserJoinView.vue'
 import UserLoginView from '@/views/user/UserLoginView.vue'
@@ -21,10 +22,16 @@ import MyBoardListView from '@/views/board/MyBoardListView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import OAuthCallback from '@/views/user/OAuthCallback.vue'
+import DiseaseInfoView from '@/views/DiseaseInfoView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/disease-info',
+      name: 'diseaseInfo',
+      component: DiseaseInfoView,
+    },
     {
       path: '/',
       name: 'Home',
@@ -98,6 +105,11 @@ const router = createRouter({
           name: 'analysisDetail',
           component: AnalysisDetailView,
         },
+        {
+          path: 'daily/:date',
+          name: 'analysisDate',
+          component: AnalysisDateView,
+        },
       ],
     },
     {
@@ -164,7 +176,8 @@ router.beforeEach((to, from, next) => {
     'board', 'boardList', 'boardDetail', 
     'userLogin', 'login', 
     'userJoin', 'signup',
-    'oauthCallback' // OAuth 콜백 페이지 추가
+    'oauthCallback', // OAuth 콜백 페이지 추가
+    'diseaseInfo' // 질환 백과
   ]
 
   const authRequired = !publicPages.includes(to.name)

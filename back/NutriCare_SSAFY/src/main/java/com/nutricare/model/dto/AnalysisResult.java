@@ -2,12 +2,35 @@ package com.nutricare.model.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class AnalysisResult {
 
     private Long analysisId;      // PK: analysis_result.analysis_id
     private Long photoId;         // FK: photo.photo_id
-    private String diagnosisName; // 진단 결과 (예: '아토피', '정상' 등)
+    @JsonProperty("diagnosis_name") // JSON의 diagnosis_name과 매핑
+    private String diagnosisName; 
+    
+    @JsonProperty("prob_gunsun")
+    private Double probGunsun;
+    
+    @JsonProperty("prob_atopy")
+    private Double probAtopy;
+    
+    @JsonProperty("prob_acne")
+    private Double probAcne;
+    
+    @JsonProperty("prob_normal")
+    private Double probNormal;
+    
+    @JsonProperty("prob_rosacea")
+    private Double probRosacea;
+    
+    @JsonProperty("prob_seborr")
+    private Double probSeborr;
+    
     private LocalDateTime createdAt; // 생성 일시
+    
 
     // 기본 생성자
     public AnalysisResult() {
@@ -28,41 +51,89 @@ public class AnalysisResult {
     }
 
     // Getter & Setter
-    public Long getAnalysisId() {
-        return analysisId;
-    }
-
-    public void setAnalysisId(Long analysisId) {
-        this.analysisId = analysisId;
-    }
-
-    public Long getPhotoId() {
-        return photoId;
-    }
-
-    public void setPhotoId(Long photoId) {
-        this.photoId = photoId;
-    }
-
-    public String getDiagnosisName() {
-        return diagnosisName;
-    }
-
-    public void setDiagnosisName(String diagnosisName) {
-        this.diagnosisName = diagnosisName;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     @Override
     public String toString() {
         return "AnalysisResult [analysisId=" + analysisId + ", photoId=" + photoId + 
                ", diagnosisName=" + diagnosisName + ", createdAt=" + createdAt + "]";
     }
+
+	public Long getAnalysisId() {
+		return analysisId;
+	}
+
+	public void setAnalysisId(Long analysisId) {
+		this.analysisId = analysisId;
+	}
+
+	public Long getPhotoId() {
+		return photoId;
+	}
+
+	public void setPhotoId(Long photoId) {
+		this.photoId = photoId;
+	}
+
+	public String getDiagnosisName() {
+		return diagnosisName;
+	}
+
+	public void setDiagnosisName(String diagnosisName) {
+		this.diagnosisName = diagnosisName;
+	}
+
+	public Double getProbGunsun() {
+		return probGunsun;
+	}
+
+	public void setProbGunsun(Double probGunsun) {
+		this.probGunsun = probGunsun;
+	}
+
+	public Double getProbAtopy() {
+		return probAtopy;
+	}
+
+	public void setProbAtopy(Double probAtopy) {
+		this.probAtopy = probAtopy;
+	}
+
+	public Double getProbAcne() {
+		return probAcne;
+	}
+
+	public void setProbAcne(Double probAcne) {
+		this.probAcne = probAcne;
+	}
+
+	public Double getProbNormal() {
+		return probNormal;
+	}
+
+	public void setProbNormal(Double probNormal) {
+		this.probNormal = probNormal;
+	}
+
+	public Double getProbRosacea() {
+		return probRosacea;
+	}
+
+	public void setProbRosacea(Double probRosacea) {
+		this.probRosacea = probRosacea;
+	}
+
+	public Double getProbSeborr() {
+		return probSeborr;
+	}
+
+	public void setProbSeborr(Double probSeborr) {
+		this.probSeborr = probSeborr;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
 }

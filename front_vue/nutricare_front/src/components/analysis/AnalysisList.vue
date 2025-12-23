@@ -1,138 +1,263 @@
 <template>
-  <section class="analysis-container">
-    <header class="header-section">
-      <h2 class="title">나의 분석 리포트</h2>
-      <p class="subtitle">AI가 분석한 피부/식단 기록을 확인해보세요.</p>
+  <section class="analysis-calendar-container">
+    <header class="calendar-header">
+      <div class="header-left">
+        <h2 class="current-date">{{ year }}년 {{ month }}월</h2>
+      </div>
+      
+      <div class="nav-buttons">
+        <button @click="prevMonth" class="nav-btn"><i class="bi bi-chevron-left">&lt;</i></button>
+        <button @click="goToday" class="nav-btn today-btn">오늘</button>
+        <button @click="nextMonth" class="nav-btn"><i class="bi bi-chevron-right">&gt;</i></button>
+      </div>
     </header>
 
-    <div v-if="isLoading" class="loading-area">
-      <div class="spinner"></div>
-    </div>
-
-    <div v-else-if="items.length === 0" class="empty-state">
-      <div class="empty-icon">📂</div>
-      <p>아직 분석 기록이 없습니다.</p>
-      <button class="upload-btn" @click="goToUpload">첫 분석 시작하기</button>
-    </div>
-
-    <template v-else>
-      <div class="gallery-grid">
-        <article
-          v-for="item in pagedItems"
-          :key="item.id"
-          class="analysis-card"
-          @click="goDetail(item.id)"
+    <div class="timeline-body">
+      <!-- 타임라인 스크롤 영역 -->
+      <div 
+        class="timeline-scroll-area" 
+        ref="scrollContainer"
+        @wheel.prevent="handleWheel"
+      >
+        <div 
+          v-for="(day, index) in daysInCurrentMonth" 
+          :key="day.date.toISOString()" 
+          class="timeline-day"
+          :class="{ 
+            'today': day.isToday,
+            'has-event': day.items.length > 0
+          }"
+          @click="handleDateClick(day)"
         >
-          <div class="image-wrapper">
-            <img :src="item.thumbnail" alt="분석 사진" loading="lazy" />
-            <div class="overlay">
-              <span class="view-btn">상세보기</span>
+          <!-- 타임라인 노드 영역 -->
+          <div 
+            class="timeline-node-area"
+            @click.stop="goToDateView(day)"
+          >
+            <span class="weekday-label" :class="{
+              'sunday': day.date.getDay() === 0,
+              'saturday': day.date.getDay() === 6
+            }">{{ getDayName(day.date) }}</span>
+            
+            <div class="timeline-line-container">
+              <div class="line-segment left" :class="{ 'start': index === 0 }"></div>
+              <div class="node-circle">
+                <span class="day-number">{{ day.date.getDate() }}</span>
+              </div>
+              <div class="line-segment right" :class="{ 'end': index === daysInCurrentMonth.length - 1 }"></div>
             </div>
           </div>
-          
-          <div class="card-content">
-            <div class="card-header">
-              <span 
-                class="status-badge" 
-                :class="item.isAnalyzed ? 'done' : 'pending'"
-              >
-                {{ item.isAnalyzed ? '분석 완료' : '대기중' }}
-              </span>
-              <span class="date">{{ formatDate(item.date) }}</span>
+
+          <!-- 컨텐츠 영역 -->
+          <div class="timeline-content">
+            <div 
+              v-for="item in getVisibleItems(day)" 
+              :key="item.id" 
+              class="event-thumbnail"
+              @click.stop="openDetail(item.id)"
+            >
+              <img :src="item.thumbnail" alt="분석" />
             </div>
             
-            <h3 class="diagnosis-title">{{ item.title }}</h3>
-            <p class="filename">{{ item.photoName }}</p>
-          </div>
-        </article>
-      </div>
+            <!-- 더보기 버튼 (접혀있을 때) -->
+            <div 
+              v-if="!isExpanded(day) && day.items.length > 3" 
+              class="more-btn"
+              @click.stop="toggleExpand(day)"
+            >
+              <span class="more-count">+{{ day.items.length - 3 }}</span>
+              <i class="bi bi-chevron-down"></i>
+            </div>
 
-      <div class="pagination">
-        <button class="page-btn nav-btn" :disabled="page === 1" @click="page--">
-          &lt;
-        </button>
-        <button
-          v-for="p in totalPages"
-          :key="p"
-          class="page-btn"
-          :class="{ active: p === page }"
-          @click="page = p"
-        >
-          {{ p }}
-        </button>
-        <button class="page-btn nav-btn" :disabled="page === totalPages" @click="page++">
-          &gt;
-        </button>
+            <!-- 접기 버튼 (펼쳐져있을 때) -->
+            <div 
+              v-if="isExpanded(day) && day.items.length > 3" 
+              class="fold-btn"
+              @click.stop="toggleExpand(day)"
+            >
+              <i class="bi bi-chevron-up"></i>
+            </div>
+
+            <div v-if="day.items.length === 0" class="empty-slot"></div>
+          </div>
+        </div>
       </div>
-    </template>
+    </div>
+    
+    <!-- 데이터 없음 안내 (월 전체에 데이터가 없을 경우) -->
+    <div v-if="!isLoading && currentMonthItemsCount === 0" class="empty-week-notice">
+      <p>이번 달에는 분석 기록이 없습니다.</p>
+      <button class="upload-btn" @click="goToUpload">분석 하러 가기</button>
+    </div>
+
+    <!-- 상세 보기 모달 -->
+    <AnalysisDetailModal 
+      v-if="selectedPhotoId" 
+      :photoId="selectedPhotoId" 
+      @close="closeDetail" 
+    />
   </section>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAnalysisStore } from '@/stores/analysis'
+import AnalysisDetailModal from './AnalysisDetailModal.vue'
 
 const router = useRouter()
 const store = useAnalysisStore()
+const scrollContainer = ref(null)
 
 const isLoading = ref(false)
+const selectedPhotoId = ref(null)
+const currentDate = ref(new Date())
+const expandedDays = ref(new Set()) // 확장된 날짜 키 저장
+
+const weekDayNames = ['일', '월', '화', '수', '목', '금', '토']
 
 onMounted(async () => {
   isLoading.value = true
   try {
     await store.fetchUserPhotos()
+    scrollToToday()
   } finally {
     isLoading.value = false
   }
 })
 
-function extractPhotoName(url) {
-  if (!url) return 'Unknown';
-  // URL에서 마지막 파일명 추출
-  const filename = url.split('/').pop();
-  
-  // UUID 패턴(36자) + 언더바(_) 제거 시도
-  // 예: "UUID_실제파일명.jpg" 형태라고 가정
-  if (filename.includes('_')) {
-    // 첫 번째 언더바 이후의 모든 문자열 반환 (UUID에 언더바가 없을 경우 안전)
-    // 하지만 UUID에 언더바가 포함될 확률은 낮으므로 간단히 처리
-    return filename.substring(filename.indexOf('_') + 1);
-  }
-  return filename;
-}
+// 날짜 포맷팅 관련
+const year = computed(() => currentDate.value.getFullYear())
+const month = computed(() => currentDate.value.getMonth() + 1)
 
 const items = computed(() =>
-  [...store.user_photos]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .map((p) => {
-      const diagnosisName = p.analysisResult?.diagnosisName;
-      return {
-        id: p.photoId,
-        date: p.createdAt, // 원본 날짜 객체 또는 문자열 유지
-        photoName: extractPhotoName(p.photoUrl),
-        title: diagnosisName || '분석 결과 없음',
-        isAnalyzed: !!diagnosisName, // 진단명이 있으면 분석 완료로 간주
-        thumbnail: p.photoUrl
-      }
-    })
+  [...store.user_photos].map((p) => ({
+    id: p.photoId,
+    date: new Date(p.createdAt),
+    thumbnail: p.photoUrl
+  }))
 )
 
-const page = ref(1)
-const pageSize = 9 // 그리드 뷰에 맞게 조정 (3x3)
-const totalPages = computed(() => Math.ceil(items.value.length / pageSize) || 1)
-const pagedItems = computed(() => {
-  const start = (page.value - 1) * pageSize
-  return items.value.slice(start, start + pageSize)
+// 현재 월의 전체 일자 데이터 생성
+const daysInCurrentMonth = computed(() => {
+  const yearVal = currentDate.value.getFullYear()
+  const monthVal = currentDate.value.getMonth()
+  const today = new Date()
+
+  const lastDayOfMonth = new Date(yearVal, monthVal + 1, 0).getDate()
+  
+  const days = []
+  for (let d = 1; d <= lastDayOfMonth; d++) {
+    const dateObj = new Date(yearVal, monthVal, d)
+    
+    // 해당 날짜의 아이템 필터링
+    const dayItems = items.value.filter(item => 
+      item.date.getFullYear() === yearVal &&
+      item.date.getMonth() === monthVal &&
+      item.date.getDate() === d
+    )
+
+    days.push({
+      date: dateObj,
+      isToday: dateObj.toDateString() === today.toDateString(),
+      items: dayItems
+    })
+  }
+  return days
 })
 
-function formatDate(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+const currentMonthItemsCount = computed(() => {
+  return daysInCurrentMonth.value.reduce((acc, day) => acc + day.items.length, 0)
+})
+
+function getDayName(date) {
+  return weekDayNames[date.getDay()]
 }
 
-function goDetail(id) {
-  router.push({ name: 'analysisDetail', params: { photoId: id } }).catch(() => {})
+function getDayKey(day) {
+  return day.date.toISOString().slice(0, 10) // YYYY-MM-DD
+}
+
+function isExpanded(day) {
+  return expandedDays.value.has(getDayKey(day))
+}
+
+function toggleExpand(day) {
+  const key = getDayKey(day)
+  if (expandedDays.value.has(key)) {
+    expandedDays.value.delete(key)
+  } else {
+    expandedDays.value.add(key)
+  }
+}
+
+function getVisibleItems(day) {
+  if (isExpanded(day)) {
+    return day.items
+  }
+  // 기본 3개 노출
+  return day.items.slice(0, 3)
+}
+
+// 네비게이션
+function prevMonth() {
+  const newDate = new Date(currentDate.value)
+  newDate.setMonth(newDate.getMonth() - 1)
+  currentDate.value = newDate
+  expandedDays.value.clear() // 월 이동 시 확장 상태 초기화
+}
+
+function nextMonth() {
+  const newDate = new Date(currentDate.value)
+  newDate.setMonth(newDate.getMonth() + 1)
+  currentDate.value = newDate
+  expandedDays.value.clear()
+}
+
+function goToday() {
+  currentDate.value = new Date()
+  nextTick(() => {
+    scrollToToday()
+  })
+}
+
+function scrollToToday() {
+  if (!scrollContainer.value) return
+  
+  // 오늘 날짜 요소를 찾아서 스크롤 (class="today" 검색)
+  // DOM 업데이트 후 실행되어야 함
+  setTimeout(() => {
+    const todayEl = scrollContainer.value.querySelector('.today')
+    if (todayEl) {
+      const containerWidth = scrollContainer.value.clientWidth
+      const elLeft = todayEl.offsetLeft
+      const elWidth = todayEl.offsetWidth
+      
+      // 중앙 정렬
+      scrollContainer.value.scrollTo({
+        left: elLeft - (containerWidth / 2) + (elWidth / 2),
+        behavior: 'smooth'
+      })
+    }
+  }, 100)
+}
+
+function handleWheel(e) {
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollLeft += e.deltaY
+  }
+}
+
+function handleDateClick(day) {
+  // 날짜 클릭 시 동작
+}
+
+function openDetail(id) {
+  selectedPhotoId.value = id;
+}
+
+function closeDetail() {
+  selectedPhotoId.value = null;
 }
 
 function goToUpload() {
@@ -141,250 +266,272 @@ function goToUpload() {
 </script>
 
 <style scoped>
-.analysis-container {
+/* Timeline Style */
+.analysis-calendar-container {
+  max-width: 1000px;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
-
-.header-section {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.subtitle {
-  color: #666;
-  font-size: 16px;
-}
-
-/* Gallery Grid */
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 24px;
-}
-
-.analysis-card {
-  background: white;
-  border-radius: 16px;
+  margin: 40px auto; /* 상하 여백 추가 */
+  padding: 30px; /* 내부 여백 추가 */
+  font-family: 'Pretendard', sans-serif;
+  background-color: white; /* 배경색 추가 */
+  border-radius: 24px; /* 둥근 모서리 */
+  box-shadow: 0 10px 40px rgba(0,0,0,0.04); /* 부드러운 그림자 */
+  border: 1px solid #f0f0f0; /* 미세한 테두리 */
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid transparent;
-  display: flex;
-  flex-direction: column;
 }
 
-.analysis-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 20px rgba(0,0,0,0.1);
-  border-color: #eaddff;
-}
-
-.image-wrapper {
-  width: 100%;
-  height: 200px; /* 고정 높이 */
-  position: relative;
-  background-color: #f0f0f0;
-}
-
-.image-wrapper img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.analysis-card:hover .image-wrapper img {
-  transform: scale(1.05);
-}
-
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.analysis-card:hover .overlay {
-  opacity: 1;
-}
-
-.view-btn {
-  color: white;
-  border: 1px solid white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(4px);
-}
-
-.card-content {
-  padding: 20px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-header {
+.calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 30px;
+  padding: 0 10px;
 }
 
-.status-badge {
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 700;
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
 }
 
-.status-badge.done {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-badge.pending {
-  background-color: #fff3e0;
-  color: #ef6c00;
-}
-
-.date {
-  font-size: 13px;
-  color: #999;
-}
-
-.diagnosis-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
-  
-  /* 긴 제목 말줄임 */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.filename {
-  font-size: 13px;
-  color: #888;
+.current-date {
+  font-size: 24px;
+  font-weight: 800;
   margin: 0;
-  word-break: break-all;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  color: #333;
 }
 
-/* Empty State */
-.empty-state {
-  text-align: center;
-  padding: 80px 20px;
+.nav-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-btn {
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
 }
 
-.empty-icon {
-  font-size: 48px;
+.nav-btn:hover { background: #f5f5f5; }
+.today-btn { font-weight: 600; color: #6b55c7; }
+
+/* Timeline Body */
+.timeline-body {
+  width: 100%;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.timeline-scroll-area {
+  display: flex; /* Flex container로 변경 */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  width: 100%;
+  min-height: 250px;
+  padding: 20px 0;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #ddd transparent;
+  scroll-snap-type: x mandatory;
+}
+
+.timeline-scroll-area::-webkit-scrollbar {
+  height: 8px;
+}
+.timeline-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.timeline-scroll-area::-webkit-scrollbar-thumb {
+  background-color: #ddd;
+  border-radius: 4px;
+}
+
+/* timeline-track 스타일 제거됨 */
+
+.timeline-day {
+  /* 부모(.timeline-scroll-area) 너비의 1/7 */
+  flex: 0 0 calc(100% / 7);
+  width: calc(100% / 7);
+  min-width: 0; /* flex item 최소 너비 리셋 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+/* Node Area */
+.timeline-node-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 16px;
 }
 
-.empty-state p {
+.weekday-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.weekday-label.sunday { color: #e74c3c; }
+.weekday-label.saturday { color: #3498db; }
+
+.timeline-line-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 32px;
+}
+
+.line-segment {
+  flex: 1;
+  height: 2px;
+  background-color: #eee;
+}
+
+/* 시작과 끝 선 처리 */
+.line-segment.left.start { background-color: transparent; }
+.line-segment.right.end { background-color: transparent; }
+
+.node-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.day-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Hover & Active States */
+.timeline-day:hover .node-circle {
+  border-color: #bfaee3;
+  transform: scale(1.1);
+}
+
+.timeline-day.today .node-circle {
+  background-color: #6b55c7;
+  border-color: #6b55c7;
+  box-shadow: 0 0 0 4px rgba(107, 85, 199, 0.2);
+}
+
+.timeline-day.today .day-number {
+  color: white;
+}
+
+.timeline-day.has-event .node-circle {
+  border-color: #6b55c7;
+}
+
+/* Content Area */
+.timeline-content {
+  width: 100%;
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  /* max-height 제거, 자연스럽게 늘어나도록 함 */
+}
+
+.event-thumbnail {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.event-thumbnail:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.event-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.more-btn, .fold-btn {
+  width: 56px;
+  height: 32px;
+  border-radius: 16px;
+  background-color: #f5f5f5;
   color: #666;
-  font-size: 16px;
-  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.more-btn:hover, .fold-btn:hover {
+  background-color: #e8e8e8;
+  color: #333;
+}
+
+.more-count {
+  color: #6b55c7;
+  font-weight: 700;
+}
+
+.empty-slot {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.empty-week-notice {
+  text-align: center;
+  padding: 60px;
+  color: #888;
+  background: #fafafa;
+  border-radius: 12px;
+  margin: 20px auto;
+  max-width: 1000px;
 }
 
 .upload-btn {
+  margin-top: 16px;
+  padding: 8px 20px;
   background-color: #6b55c7;
   color: white;
   border: none;
-  padding: 12px 24px;
   border-radius: 8px;
-  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  font-weight: 600;
+  transition: background-color 0.2s;
 }
 
 .upload-btn:hover {
-  background-color: #5a45b0;
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 40px;
-}
-
-.page-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: white;
-  border-radius: 8px;
-  color: #555;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.page-btn:hover:not(:disabled) {
-  background: #f3f0ff;
-  color: #6b55c7;
-}
-
-.page-btn.active {
-  background: #6b55c7;
-  color: white;
-}
-
-.page-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Loading */
-.loading-area {
-  display: flex;
-  justify-content: center;
-  padding: 60px;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #6b55c7;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  background-color: #5a47a8;
 }
 </style>

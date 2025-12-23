@@ -11,10 +11,22 @@
         <p v-if="displayFileName" class="photo-filename">{{ displayFileName }}</p>
       </div>
       <div class="info-stack">
-        <h2 class="diagnosis-title">{{ user_analysis_result?.diagnosisName || '분석 결과 없음' }}</h2>
+        <h2 class="diagnosis-title">{{ user_analysis_result?.diagnosisName || user_analysis_result?.diagnosis_name || '분석 결과 없음' }}</h2>
         <div class="info-field">
           <span class="info-label">분석 날짜</span>
           <span>{{ user_photo?.createdAt ? new Date(user_photo.createdAt).toLocaleString() : '정보 없음' }}</span>
+        </div>
+
+        <!-- 상세 확률 정보 -->
+        <div class="probabilities-chart" v-if="hasProbabilities">
+          <h4>상세 분석</h4>
+          <div v-for="item in sortedProbabilities.slice(0, 3)" :key="item.key" class="prob-row">
+            <span class="prob-name">{{ item.label }}</span>
+            <div class="prob-bar-bg">
+              <div class="prob-bar-fill" :style="{ width: `${item.value * 100}%`, backgroundColor: item.color }"></div>
+            </div>
+            <span class="prob-percent">{{ (item.value * 100).toFixed(1) }}%</span>
+          </div>
         </div>
       </div>
     </header>
@@ -104,6 +116,31 @@ const {
   diet_loading, 
   diet_error 
 } = storeToRefs(analysisStore)
+
+// 확률 매핑 정보
+const probabilityMap = [
+  { key: 'prob_gunsun', label: '건선', color: '#FF6B6B' },
+  { key: 'prob_atopy', label: '아토피', color: '#4ECDC4' },
+  { key: 'prob_acne', label: '여드름', color: '#FFE66D' },
+  { key: 'prob_rosacea', label: '주사', color: '#FF9F43' },
+  { key: 'prob_seborr', label: '지루성 피부염', color: '#1A535C' },
+  { key: 'prob_normal', label: '정상', color: '#6ab04c' },
+]
+
+const hasProbabilities = computed(() => {
+  const res = user_analysis_result.value
+  return res && (res.prob_gunsun !== undefined || res.prob_rosacea !== undefined)
+})
+
+const sortedProbabilities = computed(() => {
+  const res = user_analysis_result.value
+  if (!res) return []
+  return probabilityMap.map(item => {
+    // snake_case, camelCase 모두 대응
+    const val = res[item.key] !== undefined ? res[item.key] : (res[item.key.replace('prob_', 'prob')] || 0)
+    return { ...item, value: Number(val) }
+  }).sort((a, b) => b.value - a.value)
+})
 
 const pageLoading = ref(true) // 초기 페이지 로딩 상태
 const photoId = route.params.photoId
@@ -313,6 +350,55 @@ function formatCount(num) {
   background-color: #eaddff;
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.probabilities-chart {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.probabilities-chart h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.prob-name {
+  width: 100px; /* 60px에서 늘림 */
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap; /* 글자 줄바꿈 방지 */
+}
+
+.prob-bar-bg {
+  flex: 1;
+  height: 6px;
+  background-color: #ddd;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.prob-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.prob-percent {
+  width: 40px;
+  text-align: right;
+  color: #555;
+  font-weight: 600;
 }
 
 .recommendations-list h3 {

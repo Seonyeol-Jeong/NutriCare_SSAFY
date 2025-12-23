@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nutricare.config.security.CustomUserDetails;
+import com.nutricare.model.dto.AnalysisResult;
 
 @Service
 public class AiAnalysisApiServiceImpl implements AiAnalysisApiService {
@@ -40,7 +41,7 @@ public class AiAnalysisApiServiceImpl implements AiAnalysisApiService {
 
     @Override
     @PreAuthorize("@dietSecurity.isPhotoOwner(#photoId, principal)")
-    public String requestAnalysis(Long photoId, String photoUrl) {
+    public AnalysisResult requestAnalysis(Long photoId, String photoUrl) {
     	try {
     		
     		CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -58,14 +59,16 @@ public class AiAnalysisApiServiceImpl implements AiAnalysisApiService {
 
             // 2. 요청 전송
             Map<String, Object> response = restTemplate.postForObject(aiUrl, entity, Map.class);
-
+            
             // 3. 결과 파싱 (Null 체크 강화)
             if (response == null || !response.containsKey("diagnosis_name")) {
                 log.warn("AI 분석 결과 형식이 올바르지 않음: response={}", response);
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "AI 분석 결과가 비어있습니다.");
             }
-
-            return (String) response.get("diagnosis_name");
+            
+            AnalysisResult result = objectMapper.convertValue(response, AnalysisResult.class);
+            result.setPhotoId(photoId);
+            return result;
 
         } catch (HttpClientErrorException e) {
             // 4xx 에러: 우리가 보낸 데이터가 잘못됨

@@ -26,10 +26,23 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
     const data = response.data
     user_photo.value = data
-    user_analysis_result.value = {
-      photoId: data.photoId,
-      diagnosis: data.diagnosis,
-      analysisId: data.analysisId, // analysisId 추가
+    
+    // 응답 데이터 구조에 따라 분석 결과 매핑
+    // 예: { photoId: ..., result: { prob_gunsun: ..., diagnosis_name: ... } }
+    if (data.result) {
+      user_analysis_result.value = {
+        ...data.result, // 상세 확률 정보 병합
+        photoId: data.photoId,
+        analysisId: data.analysisId,
+        diagnosisName: data.result.diagnosis_name || data.diagnosis, // DTO @JsonProperty("diagnosis_name") 대응
+      }
+    } else {
+      // 기존 하위 호환
+      user_analysis_result.value = {
+        photoId: data.photoId,
+        diagnosisName: data.diagnosis,
+        analysisId: data.analysisId,
+      }
     }
 
     if (data) {
@@ -48,8 +61,19 @@ export const useAnalysisStore = defineStore('analysis', () => {
     if (!photoId) throw new Error('photoId가 필요합니다.')
     try {
       const response = await axios.get(`/analysis-results/photos/${photoId}`)
-      // 응답이 없으면 빈 객체 (204 No Content 대비)
-      user_analysis_result.value = response.data || {}
+      const data = response.data || {}
+      
+      if (data.result) {
+        user_analysis_result.value = {
+          ...data.result,
+          photoId: data.photoId,
+          analysisId: data.analysisId,
+          diagnosisName: data.result.diagnosis_name || data.diagnosis
+        }
+      } else {
+        user_analysis_result.value = data
+      }
+      
       return user_analysis_result.value
     } catch (error) {
       console.error("분석 결과 조회 실패:", error)
@@ -78,8 +102,20 @@ export const useAnalysisStore = defineStore('analysis', () => {
       photos.map(async (photo) => {
         try {
           const analysisResponse = await axios.get(`/analysis-results/photos/${photo.photoId}`)
+          const analysisData = analysisResponse.data || {}
+          
+          let resultToMerge = analysisData
+          if (analysisData.result) {
+            resultToMerge = {
+              ...analysisData.result,
+              photoId: analysisData.photoId,
+              analysisId: analysisData.analysisId,
+              diagnosisName: analysisData.result.diagnosis_name || analysisData.diagnosis
+            }
+          }
+
           // 사진 객체에 분석 결과를 병합합니다.
-          return { ...photo, analysisResult: analysisResponse.data || {} }
+          return { ...photo, analysisResult: resultToMerge }
         } catch (error) {
           // 특정 사진의 분석 결과를 가져오지 못하더라도 다른 사진들은 계속 처리합니다.
           console.error(`ID ${photo.photoId}의 분석 결과 로딩 실패:`, error)

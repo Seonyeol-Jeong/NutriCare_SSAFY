@@ -36,25 +36,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/user-photos")
 @Tag(name = "Photo RESTful API", description = "사용자 얼굴 사진 CRD을 할수있는 REST API")
 public class UserPhotoController {
-	
+
 	private final PhotoService photoService;
 	private final AiAnalysisApiService aiAnalysisApiService;
-    private final AnalysisResultService analysisResultService;
-	private final Storage storage;       // 파일 업로드를 위해 추가
-    private final GcsProperties gcsProps;// 파일 업로드를 위해 추가
-	
-    public UserPhotoController(PhotoService photoService, 
-            AiAnalysisApiService aiAnalysisApiService,
-            AnalysisResultService analysisResultService,
-            Storage storage,
-            GcsProperties gcsProps) {
-    	this.photoService = photoService;
-    	this.aiAnalysisApiService = aiAnalysisApiService;
-    	this.analysisResultService = analysisResultService;
-    	this.storage = storage;
-    	this.gcsProps = gcsProps;
-}
-	
+	private final AnalysisResultService analysisResultService;
+	private final Storage storage; // 파일 업로드를 위해 추가
+	private final GcsProperties gcsProps;// 파일 업로드를 위해 추가
+
+	public UserPhotoController(PhotoService photoService, AiAnalysisApiService aiAnalysisApiService,
+			AnalysisResultService analysisResultService, Storage storage, GcsProperties gcsProps) {
+		this.photoService = photoService;
+		this.aiAnalysisApiService = aiAnalysisApiService;
+		this.analysisResultService = analysisResultService;
+		this.storage = storage;
+		this.gcsProps = gcsProps;
+	}
+
 	@Operation(summary = "사진 메타데이터 단건 조회", description = "photoId로 사진 메타데이터를 조회합니다.")
 	@GetMapping("/{photoId}")
 	public ResponseEntity<?> findById(@PathVariable("photoId") long photoId) {
@@ -69,7 +66,7 @@ public class UserPhotoController {
 			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	@Operation(summary = "사용자별 사진 목록 조회", description = "userId로 업로드된 사진 메타데이터 리스트를 반환합니다.")
 	@GetMapping("/users/{userId}")
 	public ResponseEntity<?> findListByUserId(@PathVariable("userId") long userId) {
@@ -84,23 +81,23 @@ public class UserPhotoController {
 			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	@Operation(summary = "내 사진 목록 조회 (토큰 기반)", description = "로그인한 사용자의 사진 목록을 조회합니다.")
-    @GetMapping("/me")
-    public ResponseEntity<?> findMyPhotos(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        try {
-            Long userId = userDetails.getUser().getUserId();
-            List<Photo> photos = photoService.selectListByUserId(userId);
-            if (photos != null && !photos.isEmpty()) {
-                return new ResponseEntity<List<Photo>>(photos, HttpStatus.OK);
-            }
-            return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-	
+	@GetMapping("/me")
+	public ResponseEntity<?> findMyPhotos(@AuthenticationPrincipal CustomUserDetails userDetails) {
+		try {
+			Long userId = userDetails.getUser().getUserId();
+			List<Photo> photos = photoService.selectListByUserId(userId);
+			if (photos != null && !photos.isEmpty()) {
+				return new ResponseEntity<List<Photo>>(photos, HttpStatus.OK);
+			}
+			return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	/**
      * [통합된 생성 API]
      * 기능: 파일 업로드 -> DB 저장 -> AI 분석 요청 (One-Stop 처리)
@@ -123,13 +120,21 @@ public class UserPhotoController {
             photoService.insert(photo);
 
             // 3. AI 분석 요청 및 결과 저장
+            AnalysisResult analysisResult = null;
             String diagnosis = null;
             try {
-                diagnosis = aiAnalysisApiService.requestAnalysis(photo.getPhotoId(), fileUrl);
-                if (diagnosis != null) {
-                    AnalysisResult analysisResult = new AnalysisResult(photo.getPhotoId(), diagnosis);
+            	analysisResult = aiAnalysisApiService.requestAnalysis(photo.getPhotoId(), fileUrl);
+                if (analysisResult != null) {
+                    System.out.println("저장할 데이터 확인: " + analysisResult); 
+                    System.out.println("건선 확률(probGunsun): " + analysisResult.getProbGunsun());
+                    System.out.println("여드름 확률(probGunsun): " + analysisResult.getProbAcne());
+                    System.out.println("아토피 확률(probGunsun): " + analysisResult.getProbAtopy());
+                    System.out.println("정상 확률(probGunsun): " + analysisResult.getProbNormal());
+                    System.out.println("주사 확률(probGunsun): " + analysisResult.getProbRosacea());
+                    System.out.println("지루 확률(probGunsun): " + analysisResult.getProbSeborr());
                     analysisResultService.save(analysisResult);
                     analysisId = analysisResult.getAnalysisId();
+                    diagnosis = analysisResult.getDiagnosisName();
                 }
             } catch (Exception e) {
                 // AI 분석 실패는 로그만 남기고, 사진 등록은 성공으로 처리 (정책에 따라 변경 가능)
@@ -150,39 +155,35 @@ public class UserPhotoController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-	
+
 	private String uploadToGcs(String objectName, MultipartFile multipartFile) throws IOException {
-        String bucket = gcsProps.getBucketName();
-        if (bucket == null || bucket.isBlank()) {
-            throw new IllegalStateException("gcs.bucket-name is not set");
-        }
+		String bucket = gcsProps.getBucketName();
+		if (bucket == null || bucket.isBlank()) {
+			throw new IllegalStateException("gcs.bucket-name is not set");
+		}
 
-        String contentType = multipartFile.getContentType() != null
-                ? multipartFile.getContentType()
-                : "application/octet-stream";
+		String contentType = multipartFile.getContentType() != null ? multipartFile.getContentType()
+				: "application/octet-stream";
 
-        BlobId blobId = BlobId.of(bucket, objectName);
-        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
-                .setContentType(contentType)
-                .build();
+		BlobId blobId = BlobId.of(bucket, objectName);
+		BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build();
 
-        storage.create(blobInfo, multipartFile.getBytes());
+		storage.create(blobInfo, multipartFile.getBytes());
 
-        String baseUrl = (gcsProps.getBaseUrl() != null && !gcsProps.getBaseUrl().isBlank())
-                ? gcsProps.getBaseUrl()
-                : "https://storage.googleapis.com";
+		String baseUrl = (gcsProps.getBaseUrl() != null && !gcsProps.getBaseUrl().isBlank()) ? gcsProps.getBaseUrl()
+				: "https://storage.googleapis.com";
 
-        return baseUrl + "/" + bucket + "/" + objectName;
-    }
+		return baseUrl + "/" + bucket + "/" + objectName;
+	}
 
-    private String buildObjectName(String prefix, String ownerId, String originalFilename) {
-        String cleanPrefix = (prefix != null) ? prefix.trim() : "";
-        if (!cleanPrefix.isEmpty() && !cleanPrefix.endsWith("/")) {
-            cleanPrefix = cleanPrefix + "/";
-        }
-        String ownerSegment = (ownerId != null && !ownerId.isBlank()) ? ownerId + "/" : "";
-        String filename = UUID.randomUUID() + "_" + originalFilename;
-        return cleanPrefix + ownerSegment + filename;
-    }
-	
+	private String buildObjectName(String prefix, String ownerId, String originalFilename) {
+		String cleanPrefix = (prefix != null) ? prefix.trim() : "";
+		if (!cleanPrefix.isEmpty() && !cleanPrefix.endsWith("/")) {
+			cleanPrefix = cleanPrefix + "/";
+		}
+		String ownerSegment = (ownerId != null && !ownerId.isBlank()) ? ownerId + "/" : "";
+		String filename = UUID.randomUUID() + "_" + originalFilename;
+		return cleanPrefix + ownerSegment + filename;
+	}
+
 }

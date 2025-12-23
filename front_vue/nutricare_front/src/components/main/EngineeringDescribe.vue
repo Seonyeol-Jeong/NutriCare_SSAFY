@@ -46,7 +46,7 @@ import logoImg from '@/assets/Logo.png'
 import joonhoImg from '@/assets/jonnho.png'
 import seonyeolImg from '@/assets/seonyeol.png'
 
-const projectReadmeUrl = '#' // 여기에 실제 프로젝트 ReadMe 링크를 입력하세요
+const projectReadmeUrl = 'https://github.com/Seonyeol-Jeong/NutriCare_SSAFY?tab=readme-ov-file' // 여기에 실제 프로젝트 ReadMe 링크를 입력하세요
 
 function goToReadme() {
   window.open(projectReadmeUrl, '_blank')

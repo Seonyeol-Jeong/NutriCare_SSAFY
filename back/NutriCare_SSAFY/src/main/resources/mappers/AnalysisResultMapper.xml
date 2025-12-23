@@ -8,17 +8,31 @@
         <id property="analysisId" column="analysis_id"/>
         <result property="photoId" column="photo_id"/>
         <result property="diagnosisName" column="diagnosis_name"/>
+        <result property="probGunsun" column="prob_gunsun"/>
+        <result property="probAtopy" column="prob_atopy"/>
+        <result property="probAcne" column="prob_acne"/>
+        <result property="probNormal" column="prob_normal"/>
+        <result property="probRosacea" column="prob_rosacea"/>
+        <result property="probSeborr" column="prob_seborr"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
     <sql id="analysisColumns">
-        analysis_id, photo_id, diagnosis_name, created_at
+        analysis_id, photo_id, diagnosis_name, 
+        prob_gunsun, prob_atopy, prob_acne, prob_normal, prob_rosacea, prob_seborr, 
+        created_at
     </sql>
 
     <insert id="insert" parameterType="com.nutricare.model.dto.AnalysisResult"
             useGeneratedKeys="true" keyProperty="analysisId">
-        INSERT INTO analysis_result (photo_id, diagnosis_name)
-        VALUES (#{photoId}, #{diagnosisName})
+        INSERT INTO analysis_result (
+            photo_id, diagnosis_name, 
+            prob_gunsun, prob_atopy, prob_acne, prob_normal, prob_rosacea, prob_seborr
+        )
+        VALUES (
+            #{photoId}, #{diagnosisName}, 
+            #{probGunsun}, #{probAtopy}, #{probAcne}, #{probNormal}, #{probRosacea}, #{probSeborr}
+        )
     </insert>
 
     <select id="selectByPhotoId" parameterType="long" resultMap="analysisResultMap">

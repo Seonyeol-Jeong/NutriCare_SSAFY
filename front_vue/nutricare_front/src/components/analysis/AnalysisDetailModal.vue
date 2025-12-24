@@ -78,12 +78,25 @@
             <h3>AI 추천 식단</h3>
             
             <div v-if="diet_loading" class="loading-container">
-              <p>AI가 맞춤 식단을 생성하는 중입니다...</p>
+              <div class="loading-content">
+                <!-- 스피너 (버퍼 UI) -->
+                <div class="spinner-buffer">
+                  <div class="spinner-track"></div>
+                  <div class="spinner-fill"></div>
+                </div>
+                
+                <!-- 메시지 슬라이드 애니메이션 -->
+                <div class="message-wrapper">
+                   <Transition name="slide-up" mode="out-in">
+                      <p :key="loadingMessage" class="loading-text">{{ loadingMessage }}</p>
+                   </Transition>
+                </div>
+              </div>
             </div>
 
             <div v-else-if="isRecommendationEmpty" class="create-recommendation-prompt">
               <p>이 분석 결과에 대한 맞춤 식단 추천을 받아보세요.</p>
-              <button @click="handleCreateRecommendation" class="create-button">
+              <button type="button" @click.stop="handleCreateRecommendation" class="create-button">
                 ✨ 식단 추천 생성하기
               </button>
               <p v-if="diet_error" class="error-msg">{{ diet_error }}</p>
@@ -243,6 +256,34 @@ watch(diet_recommendations, async (newVal) => {
   }
 });
 
+// 로딩 메시지 로테이션 로직
+const loadingMessage = ref('AI가 맞춤 식단을 생성하는 중입니다...')
+let loadingInterval = null
+
+const loadingMessages = [
+  '피부 상태에 맞는 영양소를 분석하고 있습니다...',
+  '식품의약품안전처 DB에서 최적의 식재료를 검색 중입니다...',
+  '건강하고 맛있는 레시피를 조합하고 있습니다...',
+  '유튜브에서 관련 레시피 영상을 찾고 있습니다...',
+  '거의 다 되었습니다! 잠시만 기다려주세요...'
+]
+
+watch(diet_loading, (newVal) => {
+  if (newVal) {
+    let index = 0
+    loadingMessage.value = loadingMessages[0]
+    loadingInterval = setInterval(() => {
+      index = (index + 1) % loadingMessages.length
+      loadingMessage.value = loadingMessages[index]
+    }, 4000) // 4초마다 변경
+  } else {
+    if (loadingInterval) {
+      clearInterval(loadingInterval)
+      loadingInterval = null
+    }
+  }
+})
+
 async function fetchYoutubeInfoForList() {
   const promises = diet_recommendations.value.map(async (rec) => {
     if (!rec.embedUrl && rec.menuName) {
@@ -278,9 +319,19 @@ onMounted(async () => {
 })
 
 async function handleCreateRecommendation() {
-  const analysisId = user_analysis_result.value?.analysisId
-  if (!analysisId) return
-  await analysisStore.createAndFetchDietRecommendation({ analysisId, memo: "식단 추천" })
+  console.log("Analysis Result Object:", user_analysis_result.value);
+  const analysisId = user_analysis_result.value?.analysisId || user_analysis_result.value?.analysis_id
+  console.log("Modal handleCreateRecommendation called. analysisId:", analysisId);
+  if (!analysisId) {
+    alert("분석 ID가 없어 추천을 생성할 수 없습니다.")
+    return
+  }
+  try {
+    await analysisStore.createAndFetchDietRecommendation({ analysisId, memo: "식단 추천" })
+  } catch (e) {
+    console.error(e)
+    alert("오류 발생: " + e.message)
+  }
 }
 </script>
 
@@ -342,6 +393,88 @@ async function handleCreateRecommendation() {
 }
 
 /* 기존 AnalysisDetail 스타일 일부 재사용 및 조정 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 250px;
+  color: #666;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* 버퍼형 스피너 UI */
+.spinner-buffer {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.spinner-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 4px solid #e0e0e0;
+  border-radius: 50%;
+}
+
+.spinner-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 4px solid transparent;
+  border-top-color: #6b55c7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* 메시지 래퍼 (공간 확보) */
+.message-wrapper {
+  height: 24px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b55c7;
+  margin: 0;
+  text-align: center;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 슬라이드 업 & 페이드 트랜지션 */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.5s ease;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
 .detail-container {
   max-width: 800px;
   margin: 0 auto;
@@ -544,6 +677,8 @@ async function handleCreateRecommendation() {
   background: #fcfaff;
   border-radius: 16px;
   border: 2px dashed #d0c4f3;
+  position: relative;
+  z-index: 10;
 }
 
 .create-button {

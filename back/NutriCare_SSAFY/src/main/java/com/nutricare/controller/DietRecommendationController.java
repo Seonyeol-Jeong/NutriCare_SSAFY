@@ -214,7 +214,7 @@ public class DietRecommendationController {
     		return new ResponseEntity<>(rec, HttpStatus.OK);
     	} else {
     		// 없으면 404 Not Found를 보내서 프론트의 catch 블록(404 체크)이 동작하게 함
-    		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     	}
     }
 

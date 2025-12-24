@@ -27,6 +27,12 @@ export const useUserStore = defineStore('user', {
         // 백엔드 UserDetailResponse 구조: { user: {...}, healthProfile: {...} }
         this.userInfo = response.data.user
         this.healthProfile = response.data.healthProfile || {}
+        
+        // userId 상태 동기화 (새로고침 시 localStorage 이슈 방지)
+        if (this.userInfo.userId) {
+          this.userId = this.userInfo.userId
+          localStorage.setItem('userId', this.userId)
+        }
 
         this.isLoggedIn = true // 정보 로드 성공 시 로그인 확인
       } catch (error) {

@@ -84,11 +84,11 @@ const router = createRouter({
     },
     {
       path: '/analysis',
-      name: 'analysis',
       component: AnalysisView,
       children: [
         {
           path: '',
+          name: 'analysis',
           redirect: { name: 'analysisUpload' },
         },
         {

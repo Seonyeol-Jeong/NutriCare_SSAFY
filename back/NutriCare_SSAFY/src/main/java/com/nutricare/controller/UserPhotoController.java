@@ -147,6 +147,7 @@ public class UserPhotoController {
             response.put("photoId", photo.getPhotoId());
             response.put("fileUrl", fileUrl);
             response.put("diagnosis", diagnosis);
+            response.put("result", analysisResult);
 
             return new ResponseEntity<>(response, HttpStatus.CREATED);
 

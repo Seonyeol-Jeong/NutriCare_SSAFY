@@ -33,6 +33,13 @@
         <input ref="fileInput" type="file" accept="image/*" class="hidden-input" @change="onFileChange" />
       </div>
 
+      <!-- 내 분석 기록 보기 버튼 (로그인 시) -->
+      <div v-if="userStore.isLoggedIn" class="history-link-area">
+        <button type="button" class="text-button" @click="goToHistory">
+          <i class="bi bi-clock-history"></i> 내 분석 기록 보기
+        </button>
+      </div>
+
       <!-- 분석하기 버튼 -->
       <div class="actions">
         <button class="primary-button" type="button" @click="analyze" :disabled="!selectedFile || isLoading">
@@ -101,6 +108,18 @@ function removeFile() {
   previewUrl.value = ''
   if (fileInput.value) {
     fileInput.value.value = ''
+  }
+}
+
+async function goToHistory() {
+  if (!userStore.userId) {
+    await userStore.fetchMe()
+  }
+  if (userStore.userId) {
+    router.push({ name: 'analysisList', params: { userId: Number(userStore.userId) } })
+  } else {
+    console.error("사용자 ID를 찾을 수 없습니다.")
+    alert("로그인 정보를 확인할 수 없습니다.")
   }
 }
 
@@ -273,6 +292,31 @@ async function analyze() {
 
 .hidden-input {
   display: none;
+}
+
+.history-link-area {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -12px;
+}
+
+.text-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.text-button:hover {
+  background-color: #f5f5f5;
+  color: #6b55c7;
 }
 
 .actions {

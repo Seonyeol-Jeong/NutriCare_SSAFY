@@ -189,8 +189,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
       
       // 2. AI 식단 생성 요청 (POST /diet-recommendations/{recId})
       // 이것이 없으면 식단이 생성되지 않고 빈 리스트만 조회됩니다.
-      // AI 생성은 시간이 오래 걸릴 수 있으므로 타임아웃을 60초로 개별 설정합니다.
-      await axios.post(`/diet-recommendations/${recId}`, null, { timeout: 60000 })
+      // AI 생성은 시간이 오래 걸릴 수 있으므로 타임아웃을 120초로 개별 설정합니다.
+      await axios.post(`/diet-recommendations/${recId}`, null, { timeout: 120000 })
 
       // 3. 받은 recId로 상세 식단 목록 조회
       // fetchDietRecommendationById 액션을 직접 호출하여 로직 재사용
@@ -199,6 +199,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     } catch (e) {
       console.error('식단 추천 생성 또는 조회 실패:', e)
       diet_error.value = '식단 추천을 생성하거나 불러오는 데 실패했습니다.'
+      throw e
     } finally {
       diet_loading.value = false
     }

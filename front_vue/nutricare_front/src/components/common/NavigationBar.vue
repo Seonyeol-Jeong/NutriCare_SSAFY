@@ -85,7 +85,8 @@ const menuItems = computed(() => [
   { key: 'intro', label: '소개', routeName: 'engineeringDescribe' },
   { key: 'board', label: '커뮤니티', routeName: 'boardList' },
   { key: 'analysis', label: 'AI 분석', routeName: 'analysisUpload' },
-  { key: 'diseaseInfo', label: '질환 백과', routeName: 'diseaseInfo' }, // 추가된 항목
+  { key: 'diseaseInfo', label: '질환 백과', routeName: 'diseaseInfo' },
+  { key: 'dermatologist', label: '피부과 찾기', routeName: 'dermatologist' },
 ])
 
 const isDropdownOpen = ref(false)

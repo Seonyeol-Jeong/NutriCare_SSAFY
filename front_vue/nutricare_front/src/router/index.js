@@ -23,10 +23,16 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import OAuthCallback from '@/views/user/OAuthCallback.vue'
 import DiseaseInfoView from '@/views/DiseaseInfoView.vue'
+import DermatologistView from '@/views/DermatologistView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/dermatologist',
+      name: 'dermatologist',
+      component: DermatologistView,
+    },
     {
       path: '/disease-info',
       name: 'diseaseInfo',
@@ -177,7 +183,8 @@ router.beforeEach((to, from, next) => {
     'userLogin', 'login', 
     'userJoin', 'signup',
     'oauthCallback', // OAuth 콜백 페이지 추가
-    'diseaseInfo' // 질환 백과
+    'diseaseInfo', // 질환 백과
+    'dermatologist' // 피부과 찾기
   ]
 
   const authRequired = !publicPages.includes(to.name)

@@ -18,6 +18,11 @@
             <div class="photo-container">
               <img v-if="user_photo?.photoUrl" :src="user_photo.photoUrl" alt="분석 사진" class="user-photo-img" />
               <div v-else class="photo-placeholder">사진 없음</div>
+              
+              <!-- 근처 피부과 찾기 버튼 -->
+              <button @click="goToDermatologist" class="find-hospital-btn">
+                <i class="bi bi-geo-alt-fill"></i> 근처 피부과 찾기
+              </button>
             </div>
             <div class="info-stack">
               <h2 class="diagnosis-title">{{ user_analysis_result?.diagnosisName || user_analysis_result?.diagnosis_name || '분석 결과 없음' }}</h2>
@@ -111,6 +116,7 @@
 
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAnalysisStore } from '@/stores/analysis'
 import { storeToRefs } from 'pinia'
 import { searchRecipeVideo } from '@/api/youtube'
@@ -123,6 +129,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
+const router = useRouter()
+
+const goToDermatologist = () => {
+  emit('close') // 모달 닫기
+  router.push({ name: 'dermatologist' }) // 피부과 찾기 페이지로 이동
+}
 
 const analysisStore = useAnalysisStore()
 const { user_photo, user_analysis_result, diet_recommendations, diet_loading, diet_error } = storeToRefs(analysisStore)
@@ -351,6 +363,30 @@ async function handleCreateRecommendation() {
   object-fit: cover;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-bottom: 12px;
+}
+
+.find-hospital-btn {
+  width: 100%;
+  padding: 12px;
+  background: #f0f7ff;
+  color: #3182ce;
+  border: 1px solid #bee3f8;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.find-hospital-btn:hover {
+  background: #ebf8ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(49, 130, 206, 0.15);
 }
 
 .info-stack {
